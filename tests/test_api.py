@@ -1,13 +1,15 @@
-import pytest
-from unittest.mock import Mock, patch
-from fastapi.testclient import TestClient
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
+
 from src.main import app
 from src.models.schemas import (
-    SearchQuery,
     AnalysisResult,
-    Post,
     EngagementStats,
+    Post,
+    SearchQuery,
     SentimentType,
 )
 

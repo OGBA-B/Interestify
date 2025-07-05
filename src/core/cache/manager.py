@@ -1,9 +1,10 @@
 import hashlib
 import json
 import time
-from typing import Any, Dict, Optional, List
 from datetime import datetime, timedelta
-from src.models.schemas import SearchQuery, AnalysisResult
+from typing import Any, Dict, List, Optional
+
+from src.models.schemas import AnalysisResult, SearchQuery
 
 
 class CacheManager:

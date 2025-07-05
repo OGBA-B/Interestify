@@ -1,6 +1,7 @@
-from src.core.datasources.base import DataSource
-from src.models.schemas import Post, EngagementStats, SearchQuery
 from datetime import datetime
+
+from src.core.datasources.base import DataSource
+from src.models.schemas import EngagementStats, Post, SearchQuery
 
 
 class DummyInfluencerSource(DataSource):

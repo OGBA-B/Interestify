@@ -1,15 +1,14 @@
 import pytest
 
-
 # Import all test modules to make them discoverable
 from . import (
-    test_sentiment,
-    test_datasources,
-    test_cache,
     test_api,
-    test_utils,
+    test_cache,
     test_database,
+    test_datasources,
     test_integration,
+    test_sentiment,
+    test_utils,
 )
 
 # Configuration for pytest
@@ -51,8 +50,9 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture
 def sample_post():
     """Sample post for testing"""
-    from src.models.schemas import Post, EngagementStats
     from datetime import datetime
+
+    from src.models.schemas import EngagementStats, Post
 
     return Post(
         id="test_post_1",
@@ -90,8 +90,9 @@ def sample_search_query():
 @pytest.fixture
 def sample_analysis_result():
     """Sample analysis result for testing"""
-    from src.models.schemas import AnalysisResult, SentimentType
     from datetime import datetime
+
+    from src.models.schemas import AnalysisResult, SentimentType
 
     return AnalysisResult(
         query="test query",

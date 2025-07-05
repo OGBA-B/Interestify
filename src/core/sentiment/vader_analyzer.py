@@ -1,7 +1,10 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from .base import SentimentAnalyzer
+
 from src.models.schemas import SentimentType
+
+from .base import SentimentAnalyzer
 
 
 class VaderAnalyzer(SentimentAnalyzer):

@@ -1,8 +1,10 @@
-from typing import Dict, List, Type, Optional
-from .base import DataSource
-from .twitter import TwitterDataSource
-from .reddit import RedditDataSource
+from typing import Dict, List, Optional, Type
+
 from src.models.schemas import DataSourceConfig
+
+from .base import DataSource
+from .reddit import RedditDataSource
+from .twitter import TwitterDataSource
 
 
 class DataSourceManager:

@@ -3,8 +3,8 @@
 Simple test script to verify the Interestify v2 implementation
 """
 
-import sys
 import os
+import sys
 
 # Add the project root to the Python path
 sys.path.insert(0, "/workspaces/Interestify")
@@ -53,9 +53,10 @@ def test_cache_system():
     print("\n🧪 Testing Cache System...")
 
     try:
-        from src.core.cache import cache_manager
-        from src.models.schemas import SearchQuery, AnalysisResult, SentimentType
         from datetime import datetime
+
+        from src.core.cache import cache_manager
+        from src.models.schemas import AnalysisResult, SearchQuery, SentimentType
 
         # Create test query
         query = SearchQuery(query="test", limit=10)
@@ -128,8 +129,9 @@ def test_models():
     print("\n🧪 Testing Data Models...")
 
     try:
-        from src.models.schemas import Post, EngagementStats, SearchQuery
         from datetime import datetime
+
+        from src.models.schemas import EngagementStats, Post, SearchQuery
 
         # Test creating a post
         post = Post(

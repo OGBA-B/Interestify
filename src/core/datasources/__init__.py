@@ -1,7 +1,7 @@
 from .base import DataSource
-from .twitter import TwitterDataSource
-from .reddit import RedditDataSource
 from .manager import DataSourceManager, data_source_manager
+from .reddit import RedditDataSource
+from .twitter import TwitterDataSource
 
 __all__ = [
     "DataSource",

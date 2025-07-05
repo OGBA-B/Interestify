@@ -1,7 +1,10 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from textblob import TextBlob
-from .base import SentimentAnalyzer
+
 from src.models.schemas import SentimentType
+
+from .base import SentimentAnalyzer
 
 
 class TextBlobAnalyzer(SentimentAnalyzer):

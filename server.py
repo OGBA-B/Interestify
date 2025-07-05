@@ -1,6 +1,7 @@
-import apitesting as api
-from flask import Flask, render_template, jsonify, json, request
+from flask import Flask, json, jsonify, render_template, request
 from flask_cors import CORS
+
+import apitesting as api
 
 app = Flask(
     __name__, static_folder="./client/build/static", template_folder="./client/build"

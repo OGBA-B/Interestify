@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from src.models.schemas import Post, SearchQuery, DataSourceConfig
+from typing import Any, Dict, List, Optional
+
+from src.models.schemas import DataSourceConfig, Post, SearchQuery
 
 
 class DataSource(ABC):

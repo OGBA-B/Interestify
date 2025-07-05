@@ -1,7 +1,8 @@
+from typing import Dict, Type
+
 from .base import SentimentAnalyzer
 from .textblob_analyzer import TextBlobAnalyzer
 from .vader_analyzer import VaderAnalyzer
-from typing import Dict, Type
 
 
 class SentimentAnalyzerFactory:

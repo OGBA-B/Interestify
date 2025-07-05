@@ -1,13 +1,15 @@
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
-from src.models.schemas import Post, EngagementStats, SearchQuery, DataSourceConfig
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from src.core.datasources import (
     DataSource,
-    TwitterDataSource,
-    RedditDataSource,
     DataSourceManager,
+    RedditDataSource,
+    TwitterDataSource,
 )
+from src.models.schemas import DataSourceConfig, EngagementStats, Post, SearchQuery
 
 
 class MockDataSource(DataSource):

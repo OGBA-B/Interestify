@@ -1,10 +1,10 @@
+import json
+import os
+
+import numpy as np
 import requests
 import sklearn
 from twython import Twython
-import json
-import numpy as np
-import os
-
 
 credentials = {}
 credentials["CONSUMER_KEY"] = os.environ.get("INTERESTIFY_CONSUMER_KEY", "")

@@ -1,10 +1,13 @@
-from typing import List, Dict, Any, Optional
-from datetime import datetime
 import asyncio
-import aiohttp
 import json
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import aiohttp
+
+from src.models.schemas import DataSourceConfig, EngagementStats, Post, SearchQuery
+
 from .base import DataSource
-from src.models.schemas import Post, SearchQuery, DataSourceConfig, EngagementStats
 
 
 class TwitterDataSource(DataSource):

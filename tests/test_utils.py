@@ -1,10 +1,12 @@
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from src.utils.pagination import (
-    paginate_results,
-    create_paginated_response,
     PaginatedResponse,
+    create_paginated_response,
+    paginate_results,
 )
 
 

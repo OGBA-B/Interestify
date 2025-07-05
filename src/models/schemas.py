@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Dict, Optional, List
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class SentimentType(str, Enum):

@@ -1,8 +1,10 @@
-import pytest
-from unittest.mock import patch
 from datetime import datetime
-from src.models.schemas import Post, EngagementStats, SentimentType
-from src.core.sentiment import TextBlobAnalyzer, VaderAnalyzer, SentimentAnalyzerFactory
+from unittest.mock import patch
+
+import pytest
+
+from src.core.sentiment import SentimentAnalyzerFactory, TextBlobAnalyzer, VaderAnalyzer
+from src.models.schemas import EngagementStats, Post, SentimentType
 
 
 class TestTextBlobAnalyzer:

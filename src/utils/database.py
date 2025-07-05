@@ -1,9 +1,10 @@
 import asyncio
-from sqlalchemy import create_engine, text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from src.models.database import (
     Base,
@@ -11,7 +12,7 @@ from src.models.database import (
     PostTable,
     SentimentResultTable,
 )
-from src.models.schemas import DataSourceConfig, AnalysisResult, Post, SentimentResult
+from src.models.schemas import AnalysisResult, DataSourceConfig, Post, SentimentResult
 
 
 class DatabaseManager:
