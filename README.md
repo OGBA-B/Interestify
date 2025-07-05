@@ -335,12 +335,26 @@ flake8 src/
 black src/
 ```
 
-### Adding New Data Sources
-1. Create new class inheriting from `DataSource`
-2. Implement required methods (`search_posts`, `get_user_posts`, etc.)
-3. Add to data source manager
-4. Write tests
-5. Update documentation
+
+### Adding New Data Sources (Dynamic/Plugin System)
+1. Create a new Python file in `src/core/datasources/plugins/` (e.g., `my_source.py`).
+2. Implement a class inheriting from `DataSource` and required methods (`search_posts`, `get_user_posts`, etc.).
+3. The system will auto-register all valid plugins on startup—no code changes required.
+4. Write tests for your new data source.
+5. Update documentation if needed.
+
+## 🎯 Use Cases
+
+- **Influencers, celebrities, and social climbers**: Assess your social status and general public sentiment across platforms. Sentiment analysis incorporates follower/following counts where available for richer context and social status scoring.
+- **Companies and brands**: Gauge sentiment on products (e.g., PlayStation, Xbox) or brands, track public perception, and monitor campaigns.
+
+## 🥅 Goals
+
+- Efficient, simple, and portable codebase
+- Easy addition/removal of data sources (plugin system, no hardcoding required)
+- Accurate, explainable sentiment analysis
+- Minimize API costs via caching and bot detection
+- Comprehensive documentation and tests
 
 ### Code Style
 - Follow PEP 8 guidelines

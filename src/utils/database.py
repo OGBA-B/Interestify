@@ -248,6 +248,7 @@ class DatabaseManager:
 
                 posts = []
                 import json
+
                 for row in rows:
                     post = Post(
                         id=row.id,
@@ -256,13 +257,29 @@ class DatabaseManager:
                         author=row.author,
                         author_id=row.author_id,
                         location=row.location,
-                        engagement_stats=json.loads(row.engagement_stats) if isinstance(row.engagement_stats, str) else row.engagement_stats,
+                        engagement_stats=(
+                            json.loads(row.engagement_stats)
+                            if isinstance(row.engagement_stats, str)
+                            else row.engagement_stats
+                        ),
                         source=row.source,
                         confidence_score=row.confidence_score,
                         language=row.language,
-                        hashtags=json.loads(row.hashtags) if isinstance(row.hashtags, str) else row.hashtags,
-                        mentions=json.loads(row.mentions) if isinstance(row.mentions, str) else row.mentions,
-                        urls=json.loads(row.urls) if isinstance(row.urls, str) else row.urls,
+                        hashtags=(
+                            json.loads(row.hashtags)
+                            if isinstance(row.hashtags, str)
+                            else row.hashtags
+                        ),
+                        mentions=(
+                            json.loads(row.mentions)
+                            if isinstance(row.mentions, str)
+                            else row.mentions
+                        ),
+                        urls=(
+                            json.loads(row.urls)
+                            if isinstance(row.urls, str)
+                            else row.urls
+                        ),
                     )
                     posts.append(post)
 

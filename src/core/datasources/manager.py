@@ -8,12 +8,45 @@ from src.models.schemas import DataSourceConfig
 class DataSourceManager:
     """Manager for data sources"""
 
-    def __init__(self):
+    def __init__(self, plugin_dirs=None):
         self._data_sources: Dict[str, DataSource] = {}
         self._available_sources: Dict[str, Type[DataSource]] = {
             "twitter": TwitterDataSource,
             "reddit": RedditDataSource,
         }
+        # Support for dynamic plugin loading
+        if plugin_dirs is None:
+            plugin_dirs = ["src/core/datasources/plugins"]
+        self._plugin_dirs = plugin_dirs
+        self.load_plugins()
+
+    def load_plugins(self):
+        """Dynamically load data source plugins from plugin directories"""
+        import importlib.util
+        import os
+
+        for plugin_dir in self._plugin_dirs:
+            if not os.path.isdir(plugin_dir):
+                continue
+            for fname in os.listdir(plugin_dir):
+                if fname.endswith(".py") and not fname.startswith("__"):
+                    module_name = fname[:-3]
+                    module_path = os.path.join(plugin_dir, fname)
+                    spec = importlib.util.spec_from_file_location(
+                        module_name, module_path
+                    )
+                    if spec and spec.loader:
+                        mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(mod)
+                        # Register all DataSource subclasses in the module
+                        for attr in dir(mod):
+                            obj = getattr(mod, attr)
+                            if (
+                                isinstance(obj, type)
+                                and issubclass(obj, DataSource)
+                                and obj is not DataSource
+                            ):
+                                self.register_data_source(module_name, obj)
 
     def register_data_source(self, name: str, source_class: Type[DataSource]):
         """Register a new data source type"""

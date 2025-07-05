@@ -130,6 +130,27 @@ class TestDataSource:
 
 
 class TestDataSourceManager:
+    def test_dynamic_plugin_loading(self):
+        """Test dynamic loading of plugin data sources"""
+        # Should auto-load DummyInfluencerSource from plugins
+        manager = DataSourceManager()
+        available = manager.get_available_source_types()
+        assert "dummy_influencer" in available or "dummyinfluencer" in available
+
+        # Try to add the dummy influencer source
+        config = DataSourceConfig(name="dummy_influencer", enabled=True, rate_limit=100)
+        added = manager.add_data_source(config)
+        assert added
+        source = manager.get_data_source("dummy_influencer")
+        assert source is not None
+        import asyncio
+
+        posts = asyncio.get_event_loop().run_until_complete(
+            source.search_posts(SearchQuery(query="irrelevant"))
+        )
+        assert isinstance(posts, list)
+        assert any(hasattr(p, "followers") for p in posts)
+
     """Test data source manager"""
 
     def setup_method(self):

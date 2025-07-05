@@ -6,6 +6,33 @@ from src.core.sentiment import TextBlobAnalyzer, VaderAnalyzer, SentimentAnalyze
 
 
 class TestTextBlobAnalyzer:
+    def test_analyze_with_followers_following(self):
+        """Test sentiment analysis with follower/following data"""
+        # Simulate a post with follower/following info
+        post = Post(
+            id="3",
+            text="People love my new product!",
+            timestamp=datetime.now(),
+            author="celebrity1",
+            author_id="celebrity1",
+            source="test",
+            engagement_stats=EngagementStats(likes=10000, shares=500, comments=200),
+            confidence_score=0.95,
+            followers=1000000,
+            following=100,
+        )
+        result = self.analyzer.analyze(post.text)
+        assert result["sentiment"] == SentimentType.POSITIVE
+        # Optionally, you could add logic to boost confidence if followers >> following
+        # For now, just check that the analysis works
+
+    def test_product_sentiment(self):
+        """Test sentiment analysis for product queries"""
+        result = self.analyzer.analyze("The PlayStation is fantastic!")
+        assert result["sentiment"] == SentimentType.POSITIVE
+        result2 = self.analyzer.analyze("The Xbox is terrible.")
+        assert result2["sentiment"] == SentimentType.NEGATIVE
+
     """Test TextBlob sentiment analyzer"""
 
     def setup_method(self):

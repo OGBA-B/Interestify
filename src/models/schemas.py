@@ -32,6 +32,8 @@ class Post(BaseModel):
     hashtags: List[str] = []
     mentions: List[str] = []
     urls: List[str] = []
+    followers: Optional[int] = None
+    following: Optional[int] = None
 
 
 class SentimentResult(BaseModel):
