@@ -7,16 +7,17 @@ import os
 
 
 credentials = {}
-credentials['CONSUMER_KEY'] = os.environ.get('INTERESTIFY_CONSUMER_KEY', '')
-credentials['CONSUMER_SECRET'] = os.environ.get('INTERESTIFY_CONSUMER_SECRET', '')
-credentials['ACCESS_TOKEN'] = os.environ.get('INTERESTIFY_ACCESS_TOKEN', '')
-credentials['TOKEN_SECRET'] = os.environ.get('INTERESTIFY_TOKEN_SECRET', '')
+credentials["CONSUMER_KEY"] = os.environ.get("INTERESTIFY_CONSUMER_KEY", "")
+credentials["CONSUMER_SECRET"] = os.environ.get("INTERESTIFY_CONSUMER_SECRET", "")
+credentials["ACCESS_TOKEN"] = os.environ.get("INTERESTIFY_ACCESS_TOKEN", "")
+credentials["TOKEN_SECRET"] = os.environ.get("INTERESTIFY_TOKEN_SECRET", "")
 
-twitter = Twython(app_key=credentials['CONSUMER_KEY'],
-                  app_secret=credentials['CONSUMER_SECRET'],
-                  oauth_token=credentials['ACCESS_TOKEN'],
-                  oauth_token_secret=credentials['TOKEN_SECRET']
-                  )
+twitter = Twython(
+    app_key=credentials["CONSUMER_KEY"],
+    app_secret=credentials["CONSUMER_SECRET"],
+    oauth_token=credentials["ACCESS_TOKEN"],
+    oauth_token_secret=credentials["TOKEN_SECRET"],
+)
 
 
 # Gets user info from a list of tweets
@@ -36,35 +37,38 @@ def get_followers(screen_name):
             list.append(follower.get("name"))
     except Exception as e:
         print(e)
-    return (list)
+    return list
 
 
 # Returns popular tweets
 def get_popular_tweets(search_term):
-    results = twitter.cursor(twitter.search, q=search_term, result_type='popular')
+    results = twitter.cursor(twitter.search, q=search_term, result_type="popular")
     list = []
     try:
         for result in results:
             list.append(result)
-    except Exception as e: print(e)
+    except Exception as e:
+        print(e)
     return list
 
 
 # Returns tweets with
-def search_tweets(search_term,apply_sentiment=False,min_confidence=0,limit=100):
-    results = twitter.cursor(twitter.search, q=search_term, result_type='popular')
+def search_tweets(search_term, apply_sentiment=False, min_confidence=0, limit=100):
+    results = twitter.cursor(twitter.search, q=search_term, result_type="popular")
     list = []
     try:
         for result in results:
             list.append(result)
-    except Exception as e: print(e)
-    return (list)
+    except Exception as e:
+        print(e)
+    return list
 
-#TESTS
+
+# TESTS
 
 # tweet_list = []
 # results = get_popular_tweets("john boyega")
-#print(results)
+# print(results)
 
 # users = get_users(tweet_list)
 # followers = get_followers("pewdiepie")
