@@ -12,9 +12,11 @@ export interface TableHeader {
 	title: string
 }
 
+type DataRow = Record<string, any>;
+
 interface TableProps {
-	header: TableHeader[],
-	body: {}[],
+        header: TableHeader[],
+        body: DataRow[],
 	striped?: boolean,
 	pagination?: PaginationOptions,
 	actions?: boolean,
@@ -36,8 +38,8 @@ interface BodyProps {
 }
 
 interface TableState {
-	headerData: TableHeader[],
-	bodyData: {}[],
+        headerData: TableHeader[],
+        bodyData: DataRow[],
 	footerData: JSX.Element | undefined,
 	sortBy: SortBy,
 	pagination: PaginationState | undefined
@@ -80,7 +82,7 @@ const ActionIcons: {[index: string]: any} = {
  * 
  * @return the sorted collection
  */
-const sortCollectionBy = (collection: {}[], id: string, order: 'asc' | 'desc'): {}[] => {
+const sortCollectionBy = (collection: DataRow[], id: string, order: 'asc' | 'desc'): DataRow[] => {
     var sorted = [ ...collection ];
     sorted = _.orderBy(sorted, id, order);
     return sorted
@@ -144,7 +146,7 @@ const tableReducer = (state: TableState, action: ReducerAction): TableState => {
  * @return an array containg the data of the row object
  * 			in an ordered format.
  */
-const orderByHeader = (row: {}, header: TableHeader[], hasActions: boolean, missingValue?: string): any[] => {
+const orderByHeader = (row: DataRow, header: TableHeader[], hasActions: boolean, missingValue?: string): any[] => {
     var entries = Object.entries(row);
     var rowData: any[] = [];
     header.forEach(heading => {
@@ -217,18 +219,18 @@ const InterestifyTable = (props: TableProps) => {
         var hasActions = (actions)? true : false;
 
         // determine what page to display
-        var page = undefined;
+        var page: DataRow[] | undefined = undefined;
 		if (state.pagination) {
-			var pages = _.chunk(state.bodyData, state.pagination.rowsPerPage);
+                    var pages: DataRow[][] = _.chunk(state.bodyData, state.pagination.rowsPerPage);
 			page = pages[state.pagination.currentPageIndex];
         } else page = state.bodyData;
         
 		return (
             <TableBody className={ (elevated) ? 'elevated-table' : '' }>
                 {
-                    page && page.map((row: {}, index: number) => 
+                    page && page.map((row: DataRow, index: number) =>
                     (<TableRow className={ (striped && index % 2 !== 0) ?  'dark-row' : 'light-row'} 
-                        hover key={ index } children={ orderByHeader(row, state.headerData, hasActions).map((data: {}[], index: number) => 
+                        hover key={ index } children={ orderByHeader(row, state.headerData, hasActions).map((data: any, index: number) =>
                             <TableCell key={ index } children={ data } />) } />))
                 }
             </TableBody>
@@ -329,8 +331,13 @@ const InterestifyTable = (props: TableProps) => {
                                 count={ state.bodyData.length }
                                 rowsPerPage={ state.pagination.rowsPerPage }
                                 page={ state.pagination.currentPageIndex }
-                                onChangePage={ $event => {} }
-                                onChangeRowsPerPage={ $event => { changeRowsPerPage($event, dispatch) } }
+                                onPageChange={ (_event, page) => {
+                                    dispatch({
+                                        type: 'updatePagination',
+                                        payload: { currentPageIndex: page, rowsPerPage: state.pagination!.rowsPerPage }
+                                    });
+                                } }
+                                onRowsPerPageChange={ $event => { changeRowsPerPage($event, dispatch) } }
                                 ActionsComponent={ paginationNavActions } 
                                 className="ml-auto" />
                         </TableRow>
