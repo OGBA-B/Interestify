@@ -8,3 +8,5 @@ setup_secrets.sh
 .DS_Store
 .idea/
 __pycache__/
+client/.yarn/
+client/.yarnrc.yml
