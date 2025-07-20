@@ -107,6 +107,36 @@ npm start
 npm run build
 ```
 
+## 📝 How to Use Interestify
+
+After installing dependencies and configuring your `.env` file:
+
+1. **Start the Backend**
+   ```bash
+   python -m uvicorn src.main:app --reload
+   ```
+   The API will be available at `http://localhost:8000`.
+
+2. **Start the Frontend**
+   ```bash
+   cd client
+   npm start
+   ```
+   Visit `http://localhost:3000` in your browser.
+
+3. **Search for Topics**
+   - Enter keywords in the search bar.
+   - Select data sources (Twitter, Reddit, etc.) to query.
+   - Submit your search.
+
+4. **View Sentiment Results**
+   - See aggregated posts and sentiment charts.
+   - Click items for detailed information.
+
+5. **Manage Data Sources**
+   - Toggle sources on the settings page.
+   - Update API keys or switch analyzers.
+
 ## 📚 API Documentation
 
 ### Base URL
