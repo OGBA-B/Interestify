@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.api.dashboard import router as dashboard_router
 from src.core.cache import cache_manager
@@ -67,6 +68,13 @@ async def shutdown_event():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow(), "version": "2.0.0"}
+
+
+# Dashboard demo page
+@app.get("/dashboard")
+async def dashboard_demo():
+    """Serve dashboard demo page"""
+    return FileResponse("dashboard_demo.html")
 
 
 # Search and analyze posts

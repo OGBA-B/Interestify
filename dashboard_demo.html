@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interestify Geographic Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        .stat {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .sentiment-bar {
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .sentiment-segment {
+            height: 100%;
+            display: inline-block;
+        }
+        .positive { background-color: #4caf50; }
+        .negative { background-color: #f44336; }
+        .neutral { background-color: #ff9800; }
+        .region-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .location-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .confidence {
+            font-size: 12px;
+            color: #666;
+        }
+        .api-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 Interestify Geographic Dashboard</h1>
+            <p>Real-time sentiment analysis by geographical regions</p>
+        </div>
+
+        <div class="api-info">
+            <strong>Dashboard API Endpoints:</strong>
+            <ul>
+                <li><code>/api/v1/dashboard/summary</code> - Overall statistics</li>
+                <li><code>/api/v1/dashboard/geographic-sentiment</code> - Sentiment by region</li>
+                <li><code>/api/v1/dashboard/interest-trends</code> - Trends over time</li>
+            </ul>
+        </div>
+
+        <div id="dashboard" class="loading">
+            <h3>Loading dashboard data...</h3>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            try {
+                const [summaryResponse, geographicResponse] = await Promise.all([
+                    fetch('/api/v1/dashboard/summary'),
+                    fetch('/api/v1/dashboard/geographic-sentiment')
+                ]);
+
+                const summary = await summaryResponse.json();
+                const geographic = await geographicResponse.json();
+
+                renderDashboard(summary, geographic);
+            } catch (error) {
+                document.getElementById('dashboard').innerHTML = `
+                    <div class="card">
+                        <h3>Error Loading Dashboard</h3>
+                        <p>Unable to load dashboard data. Please ensure the API server is running.</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderSentimentBar(distribution) {
+            const total = distribution.positive + distribution.negative + distribution.neutral;
+            if (total === 0) return '';
+
+            const positivePercent = (distribution.positive / total) * 100;
+            const negativePercent = (distribution.negative / total) * 100;
+            const neutralPercent = (distribution.neutral / total) * 100;
+
+            return `
+                <div class="sentiment-bar">
+                    <div class="sentiment-segment positive" style="width: ${positivePercent}%"></div>
+                    <div class="sentiment-segment negative" style="width: ${negativePercent}%"></div>
+                    <div class="sentiment-segment neutral" style="width: ${neutralPercent}%"></div>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    <span style="color: #4caf50;">● Positive: ${distribution.positive}</span> |
+                    <span style="color: #f44336;">● Negative: ${distribution.negative}</span> |
+                    <span style="color: #ff9800;">● Neutral: ${distribution.neutral}</span>
+                </div>
+            `;
+        }
+
+        function renderDashboard(summary, geographic) {
+            const dashboardHTML = `
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>📊 Summary Statistics</h3>
+                        <div class="stat">
+                            <div class="stat-number">${summary.total_posts_with_location}</div>
+                            <div class="stat-label">Posts with Location</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">${summary.total_unique_locations}</div>
+                            <div class="stat-label">Unique Locations</div>
+                        </div>
+                        <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                            ${summary.note}
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>💭 Overall Sentiment</h3>
+                        ${renderSentimentBar(summary.overall_sentiment_distribution)}
+                    </div>
+
+                    <div class="card">
+                        <h3>🏆 Top Regions</h3>
+                        ${summary.top_regions.map(region => `
+                            <div class="region-item">
+                                <span>${region.location}</span>
+                                <strong>${region.post_count} posts</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🗺️ Geographic Sentiment Analysis</h3>
+                    <div class="location-grid">
+                        ${geographic.geographic_data.map(location => `
+                            <div class="location-card">
+                                <h4 style="margin-top: 0;">${location.location}</h4>
+                                <div class="confidence">
+                                    ${location.total_posts} posts • ${(location.average_confidence * 100).toFixed(1)}% confidence
+                                </div>
+                                ${renderSentimentBar(location.sentiment_distribution)}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                        ${geographic.note}
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('dashboard').innerHTML = dashboardHTML;
+        }
+
+        // Load dashboard when page loads
+        window.addEventListener('load', loadDashboard);
+    </script>
+</body>
+</html>
