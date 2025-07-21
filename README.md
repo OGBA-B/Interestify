@@ -113,7 +113,7 @@ After installing dependencies and configuring your `.env` file:
 
 1. **Start the Backend**
    ```bash
-   python -m uvicorn src.main:app --reload
+   python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
    ```
    The API will be available at `http://localhost:8000`.
 
