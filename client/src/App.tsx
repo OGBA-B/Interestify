@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import SearchTweets from './applets/SearchTweets';
 import SearchFollowers from './applets/SearchFollowers';
+import Dashboard from './applets/Dashboard';
 import { Grid, IconButton } from '@material-ui/core';
 
 function App() {
@@ -23,11 +24,17 @@ function App() {
       <br />
       <div className="container">
         <Grid container spacing={ 2 }>
-          <Grid xs={ 12 } sm={ 12 } md={ 8 } item>
-            <SearchTweets  height="80vh" />
+          {/* Dashboard takes full width on top */}
+          <Grid xs={ 12 } item>
+            <Dashboard height="60vh" />
           </Grid>
-          <Grid xs={ 12 } sm={ 12 } md={ 4 } item>
-            <SearchFollowers height="80vh" />
+          
+          {/* Original applets below */}
+          <Grid xs={ 12 } sm={ 12 } md={ 6 } item>
+            <SearchTweets height="50vh" />
+          </Grid>
+          <Grid xs={ 12 } sm={ 12 } md={ 6 } item>
+            <SearchFollowers height="50vh" />
           </Grid>
         </Grid>
       </div>

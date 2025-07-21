@@ -7,6 +7,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.api.dashboard import router as dashboard_router
 from src.core.cache import cache_manager
 from src.core.datasources import data_source_manager
 from src.core.sentiment import SentimentAnalyzerFactory, default_analyzer
@@ -35,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include dashboard router
+app.include_router(dashboard_router)
 
 # Initialize database
 db_manager = DatabaseManager()
