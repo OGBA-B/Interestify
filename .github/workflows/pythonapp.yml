@@ -13,15 +13,18 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
+    - name: Install Yarn 1.x
+      run: npm install -g yarn@1.22.22
     - name: Install python dependencies
       run: |
         python --version
         pip install -r requirements.txt
-    - name: Install node dependencies & build index file
+    - name: Install node dependencies and build frontend
       run: |
         node --version
+        yarn --version
         cd client/
-        yarn install
+        yarn install --frozen-lockfile
         yarn build
     - name: Run python tests
       run: |
