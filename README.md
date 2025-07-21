@@ -94,17 +94,20 @@ python -m uvicorn src.main:app --host 0.0.0.0 --port 8000
 ### Frontend Setup
 ```bash
 cd client/
-npm install
+yarn install
 ```
 
 **Development Mode**
 ```bash
-npm start
+yarn start
 ```
 
 **Production Build**
 ```bash
-npm run build
+yarn build
+```
+
+The CI workflow builds the frontend with Yarn to verify that it compiles correctly.
 ```
 
 ## 📝 How to Use Interestify
@@ -119,8 +122,8 @@ After installing dependencies and configuring your `.env` file:
 
 2. **Start the Frontend**
    ```bash
-   cd client
-   npm start
+    cd client
+    yarn start
    ```
    Visit `http://localhost:3000` in your browser.
 

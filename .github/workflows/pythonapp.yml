@@ -24,7 +24,7 @@ jobs:
         node --version
         yarn --version
         cd client/
-        yarn install --frozen-lockfile
+        yarn install
         yarn build
     - name: Run python tests
       run: |
