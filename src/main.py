@@ -5,8 +5,10 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
+from src.api.dashboard import router as dashboard_router
 from src.core.cache import cache_manager
 from src.core.datasources import data_source_manager
 from src.core.sentiment import SentimentAnalyzerFactory, default_analyzer
@@ -36,6 +38,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include dashboard router
+app.include_router(dashboard_router)
+
 # Initialize database
 db_manager = DatabaseManager()
 
@@ -63,6 +68,13 @@ async def shutdown_event():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow(), "version": "2.0.0"}
+
+
+# Dashboard demo page
+@app.get("/dashboard")
+async def dashboard_demo():
+    """Serve dashboard demo page"""
+    return FileResponse("dashboard_demo.html")
 
 
 # Search and analyze posts
