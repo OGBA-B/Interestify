@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.dashboard import router as dashboard_router
+from src.config import get_app_config, get_security_config
 from src.core.sentiment import SentimentAnalyzerFactory
 from src.models.schemas import (
     AnalysisResult,
@@ -24,20 +25,46 @@ from src.services.data_source_service import DataSourceService
 from src.utils.database import DatabaseManager
 from src.utils.pagination import PaginatedResponse, paginate_results
 
+# Get configuration
+config = get_app_config()
+security_config = get_security_config()
+
 app = FastAPI(
     title="Interestify API",
     description="Social media sentiment analysis API",
-    version="2.0.0",
+    version=config.version,
 )
 
-# Add CORS middleware
+# Add CORS middleware with configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
+    allow_origins=config.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=config.cors_methods,
+    allow_headers=config.cors_headers,
 )
+
+# Add security headers middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add security headers to all responses"""
+    response = await call_next(request)
+    
+    # Add Content Security Policy if enabled
+    if security_config.enable_csp:
+        response.headers["Content-Security-Policy"] = security_config.get_csp_header()
+    
+    # Add other security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Add HTTPS enforcement if enabled
+    if security_config.force_https:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
 
 # Include dashboard router
 app.include_router(dashboard_router)
@@ -71,7 +98,12 @@ async def shutdown_event():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.utcnow(), "version": "2.0.0"}
+    return {
+        "status": "healthy", 
+        "timestamp": datetime.utcnow(), 
+        "version": config.version,
+        "app_name": config.app_name
+    }
 
 
 # Dashboard demo page
