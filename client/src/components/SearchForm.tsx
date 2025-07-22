@@ -26,14 +26,24 @@ const SearchForm = (props: SearchFormProps): JSX.Element => {
             <Stack direction="row" spacing={2} alignItems="center">
                 <TextField 
                     autoFocus 
-                    size="small" 
+                    size="medium" 
                     type="text" 
-                    variant="outlined" 
+                    variant="filled" 
                     value={searchKey} 
                     onChange={handleSearchChange}
                     placeholder="search" 
                     fullWidth
-                    sx={{ flexGrow: 1 }}
+                    sx={{ 
+                        flexGrow: 1,
+                        '& .MuiFilledInput-root': {
+                            '&:hover': {
+                                backgroundColor: 'rgba(103, 80, 164, 0.08)',
+                            },
+                            '&.Mui-focused': {
+                                backgroundColor: 'rgba(103, 80, 164, 0.08)',
+                            },
+                        },
+                    }}
                 />
                 <Button 
                     type="submit" 
@@ -41,9 +51,16 @@ const SearchForm = (props: SearchFormProps): JSX.Element => {
                     color="primary"
                     startIcon={<SearchIcon />}
                     sx={{ 
-                        borderRadius: 5,
-                        px: 3,
-                        py: 1.5,
+                        borderRadius: 20, // Increased for softer pill shape
+                        px: 4, // Increased padding
+                        py: 2, // Increased padding
+                        minHeight: 48, // Better touch target
+                        boxShadow: '0px 2px 4px 0px rgba(103, 80, 164, 0.24)',
+                        '&:hover': {
+                            boxShadow: '0px 4px 8px 0px rgba(103, 80, 164, 0.32)',
+                            transform: 'translateY(-1px)', // Subtle lift effect
+                        },
+                        transition: 'all 0.2s ease-in-out', // Smooth transitions
                     }}
                 >
                     Search
