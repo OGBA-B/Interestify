@@ -2,7 +2,7 @@
 Analysis Service
 
 Handles the core business logic for post analysis, sentiment analysis,
-and result aggregation.
+and result aggregation. Now uses repository pattern for data access.
 """
 
 import time
@@ -12,14 +12,16 @@ from typing import List, Optional
 from src.core.datasources.manager import DataSourceManager
 from src.core.sentiment.factory import SentimentAnalyzerFactory
 from src.models.schemas import AnalysisResult, SearchQuery, SentimentType
+from src.repositories.analysis_repository import AnalysisRepository
 from src.utils.pagination import paginate_results
 
 
 class AnalysisService:
     """Service for handling post analysis operations"""
     
-    def __init__(self, data_source_manager: DataSourceManager):
+    def __init__(self, data_source_manager: DataSourceManager, analysis_repository: AnalysisRepository):
         self.data_source_manager = data_source_manager
+        self.analysis_repository = analysis_repository
     
     async def analyze_posts(
         self,
@@ -76,6 +78,11 @@ class AnalysisService:
             try:
                 analyzer = SentimentAnalyzerFactory.create_analyzer(analyzer_name)
                 sentiment_results = analyzer.process_posts(paginated_posts)
+                
+                # Save sentiment results to repository
+                if sentiment_results:
+                    await self.analysis_repository.save_sentiment_results(sentiment_results)
+                
             except Exception as e:
                 print(f"Sentiment analysis error: {e}")
                 # Continue without sentiment analysis
@@ -111,6 +118,13 @@ class AnalysisService:
             processing_time=time.time() - start_time,
         )
         
+        # Save analysis result to repository
+        await self.analysis_repository.save_analysis_result(analysis_result)
+        
+        # Save posts to repository
+        if all_posts:
+            await self.analysis_repository.save_posts(all_posts)
+        
         return analysis_result
     
     async def get_user_posts(
@@ -139,6 +153,11 @@ class AnalysisService:
         
         try:
             posts = await data_source.get_user_posts(user_id, limit)
+            
+            # Save posts to repository for future reference
+            if posts:
+                await self.analysis_repository.save_posts(posts)
+            
             return posts
         except Exception as e:
             raise RuntimeError(f"Error fetching user posts: {str(e)}")
@@ -160,3 +179,28 @@ class AnalysisService:
             return result
         except Exception as e:
             raise RuntimeError(f"Analysis error: {str(e)}")
+    
+    async def get_posts_by_source(self, source: str, limit: int = 50):
+        """
+        Get posts from repository by data source
+        
+        Args:
+            source: Data source name
+            limit: Maximum number of posts to return
+            
+        Returns:
+            List of posts from the source
+        """
+        return await self.analysis_repository.get_posts_by_source(source, limit)
+    
+    async def cleanup_old_analysis_data(self, older_than_days: int = 30) -> int:
+        """
+        Clean up old analysis data
+        
+        Args:
+            older_than_days: Remove data older than this many days
+            
+        Returns:
+            Number of records removed
+        """
+        return await self.analysis_repository.cleanup_old_data(older_than_days)

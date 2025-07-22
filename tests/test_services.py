@@ -16,7 +16,8 @@ class TestAnalysisService:
     
     def setup_method(self):
         self.mock_data_source_manager = Mock()
-        self.service = AnalysisService(self.mock_data_source_manager)
+        self.mock_analysis_repository = Mock()
+        self.service = AnalysisService(self.mock_data_source_manager, self.mock_analysis_repository)
     
     @pytest.mark.asyncio
     async def test_analyze_posts_no_sources(self):
@@ -39,6 +40,9 @@ class TestAnalysisService:
         ])
         
         self.mock_data_source_manager.get_enabled_sources.return_value = [mock_source]
+        self.mock_analysis_repository.save_sentiment_results = AsyncMock()
+        self.mock_analysis_repository.save_analysis_result = AsyncMock()
+        self.mock_analysis_repository.save_posts = AsyncMock()
         
         query = SearchQuery(query="test", limit=10, include_sentiment=False)
         
@@ -58,6 +62,7 @@ class TestAnalysisService:
         mock_source.get_user_posts = AsyncMock(return_value=[Mock(id="1")])
         
         self.mock_data_source_manager.get_data_source.return_value = mock_source
+        self.mock_analysis_repository.save_posts = AsyncMock()
         
         result = await self.service.get_user_posts("user1", "twitter", 10)
         
@@ -144,7 +149,8 @@ class TestDataSourceService:
     
     def setup_method(self):
         self.mock_data_source_manager = Mock()
-        self.service = DataSourceService(self.mock_data_source_manager)
+        self.mock_data_source_repository = Mock()
+        self.service = DataSourceService(self.mock_data_source_manager, self.mock_data_source_repository)
     
     def test_get_all_sources(self):
         """Test getting all data sources"""
@@ -163,34 +169,43 @@ class TestDataSourceService:
         assert sources[0]["name"] == "twitter"
         assert sources[0]["enabled"] is True
     
-    def test_add_source(self):
+    @pytest.mark.asyncio
+    async def test_add_source(self):
         """Test adding a data source"""
         config = DataSourceConfig(name="reddit", enabled=True)
         self.mock_data_source_manager.add_data_source.return_value = True
+        self.mock_data_source_repository.save_config = AsyncMock()
         
-        result = self.service.add_source(config)
+        result = await self.service.add_source(config)
         
         assert result is True
         self.mock_data_source_manager.add_data_source.assert_called_once_with(config)
+        self.mock_data_source_repository.save_config.assert_called_once_with(config)
     
-    def test_update_source(self):
+    @pytest.mark.asyncio
+    async def test_update_source(self):
         """Test updating a data source"""
         config = DataSourceConfig(name="twitter", enabled=False)
         self.mock_data_source_manager.update_source_config.return_value = True
+        self.mock_data_source_repository.update_config = AsyncMock()
         
-        result = self.service.update_source("twitter", config)
+        result = await self.service.update_source("twitter", config)
         
         assert result is True
         self.mock_data_source_manager.update_source_config.assert_called_once_with("twitter", config)
+        self.mock_data_source_repository.update_config.assert_called_once_with("twitter", config)
     
-    def test_remove_source(self):
+    @pytest.mark.asyncio
+    async def test_remove_source(self):
         """Test removing a data source"""
         self.mock_data_source_manager.remove_data_source.return_value = True
+        self.mock_data_source_repository.delete_config = AsyncMock()
         
-        result = self.service.remove_source("twitter")
+        result = await self.service.remove_source("twitter")
         
         assert result is True
         self.mock_data_source_manager.remove_data_source.assert_called_once_with("twitter")
+        self.mock_data_source_repository.delete_config.assert_called_once_with("twitter")
     
     def test_get_available_types(self):
         """Test getting available data source types"""

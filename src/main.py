@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -56,10 +56,8 @@ async def startup_event():
     """Initialize application on startup"""
     await db_manager.init_db()
 
-    # Load configured data sources from database
-    configs = await db_manager.get_all_data_source_configs()
-    for config in configs:
-        data_source_service.add_source(config)
+    # Load configured data sources from repository via service
+    await data_source_service.load_configurations_from_repository()
 
 
 @app.on_event("shutdown")
@@ -123,10 +121,6 @@ async def analyze_posts(
     if use_cache:
         cache_service.cache_result(query, analysis_result)
 
-    # Store in database (background task)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(store_analysis_result, analysis_result)
-
     return analysis_result
 
 
@@ -171,9 +165,7 @@ async def get_data_sources():
 @app.post("/api/v1/datasources", response_model=Dict[str, str])
 async def add_data_source(config: DataSourceConfig):
     """Add a new data source"""
-    if data_source_service.add_source(config):
-        # Store in database
-        await db_manager.save_data_source_config(config)
+    if await data_source_service.add_source(config):
         return {"message": f"Data source '{config.name}' added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Failed to add data source")
@@ -182,9 +174,7 @@ async def add_data_source(config: DataSourceConfig):
 @app.put("/api/v1/datasources/{name}", response_model=Dict[str, str])
 async def update_data_source(name: str, config: DataSourceConfig):
     """Update data source configuration"""
-    if data_source_service.update_source(name, config):
-        # Update in database
-        await db_manager.update_data_source_config(name, config)
+    if await data_source_service.update_source(name, config):
         return {"message": f"Data source '{name}' updated successfully"}
     else:
         raise HTTPException(status_code=404, detail="Data source not found")
@@ -193,9 +183,7 @@ async def update_data_source(name: str, config: DataSourceConfig):
 @app.delete("/api/v1/datasources/{name}", response_model=Dict[str, str])
 async def remove_data_source(name: str):
     """Remove a data source"""
-    if data_source_service.remove_source(name):
-        # Remove from database
-        await db_manager.delete_data_source_config(name)
+    if await data_source_service.remove_source(name):
         return {"message": f"Data source '{name}' removed successfully"}
     else:
         raise HTTPException(status_code=404, detail="Data source not found")
@@ -251,15 +239,6 @@ async def clear_expired_cache():
     """Clear expired cache entries"""
     cleared = cache_service.clear_expired()
     return {"message": f"Cleared {cleared} expired cache entries"}
-
-
-# Background tasks
-async def store_analysis_result(result: AnalysisResult):
-    """Store analysis result in database (background task)"""
-    try:
-        await db_manager.store_analysis_result(result)
-    except Exception as e:
-        print(f"Error storing analysis result: {e}")
 
 
 # Legacy endpoints for backward compatibility
