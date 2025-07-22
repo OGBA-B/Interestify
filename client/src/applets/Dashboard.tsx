@@ -242,7 +242,7 @@ const Dashboard: React.FC<DashboardProps> = ({ height = "80vh" }) => {
               <Grid container spacing={2}>
                 {geographicData?.geographic_data?.map((location: any, index: number) => (
                   <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card variant="outlined">
+                    <Card>
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
                           {location.location}
