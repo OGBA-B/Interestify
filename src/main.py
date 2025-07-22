@@ -1,17 +1,15 @@
 import asyncio
-import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.dashboard import router as dashboard_router
-from src.core.cache import cache_manager
-from src.core.datasources import data_source_manager
-from src.core.sentiment import SentimentAnalyzerFactory, default_analyzer
+from src.config import get_app_config, get_security_config
+from src.core.sentiment import SentimentAnalyzerFactory
 from src.models.schemas import (
     AnalysisResult,
     DataSourceConfig,
@@ -20,23 +18,53 @@ from src.models.schemas import (
     SentimentResult,
     SentimentType,
 )
+from src.services.analysis_service import AnalysisService
+from src.services.cache_service import CacheService
+from src.services.config import get_service
+from src.services.data_source_service import DataSourceService
 from src.utils.database import DatabaseManager
 from src.utils.pagination import PaginatedResponse, paginate_results
+
+# Get configuration
+config = get_app_config()
+security_config = get_security_config()
 
 app = FastAPI(
     title="Interestify API",
     description="Social media sentiment analysis API",
-    version="2.0.0",
+    version=config.version,
 )
 
-# Add CORS middleware
+# Add CORS middleware with configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
+    allow_origins=config.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=config.cors_methods,
+    allow_headers=config.cors_headers,
 )
+
+# Add security headers middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add security headers to all responses"""
+    response = await call_next(request)
+    
+    # Add Content Security Policy if enabled
+    if security_config.enable_csp:
+        response.headers["Content-Security-Policy"] = security_config.get_csp_header()
+    
+    # Add other security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Add HTTPS enforcement if enabled
+    if security_config.force_https:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
 
 # Include dashboard router
 app.include_router(dashboard_router)
@@ -44,22 +72,25 @@ app.include_router(dashboard_router)
 # Initialize database
 db_manager = DatabaseManager()
 
+# Get services from DI container
+analysis_service = get_service(AnalysisService)
+data_source_service = get_service(DataSourceService)
+cache_service = get_service(CacheService)
+
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize application on startup"""
     await db_manager.init_db()
 
-    # Load configured data sources from database
-    configs = await db_manager.get_all_data_source_configs()
-    for config in configs:
-        data_source_manager.add_data_source(config)
+    # Load configured data sources from repository via service
+    await data_source_service.load_configurations_from_repository()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    await data_source_manager.close_all()
+    await data_source_service.close_all_sources()
     await db_manager.close()
 
 
@@ -67,7 +98,12 @@ async def shutdown_event():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.utcnow(), "version": "2.0.0"}
+    return {
+        "status": "healthy", 
+        "timestamp": datetime.utcnow(), 
+        "version": config.version,
+        "app_name": config.app_name
+    }
 
 
 # Dashboard demo page
@@ -99,91 +135,23 @@ async def analyze_posts(
     Returns:
         Analysis results with posts and sentiment analysis
     """
-    start_time = time.time()
-
     # Check cache first
     if use_cache:
-        cached_result = cache_manager.get(query)
+        cached_result = cache_service.get_cached_result(query)
         if cached_result:
             return cached_result
 
-    # Get enabled data sources
-    enabled_sources = data_source_manager.get_enabled_sources()
-
-    if not enabled_sources:
-        raise HTTPException(status_code=503, detail="No data sources available")
-
-    # Filter sources based on query
-    sources_to_use = enabled_sources
-    if query.data_sources:
-        sources_to_use = [
-            source for source in enabled_sources if source.name in query.data_sources
-        ]
-
-    # Collect posts from all sources
-    all_posts = []
-    sources_used = []
-
-    for source in sources_to_use:
-        try:
-            posts = await source.search_posts(query)
-            all_posts.extend(posts)
-            sources_used.append(source.name)
-        except Exception as e:
-            print(f"Error fetching from {source.name}: {e}")
-            continue
-
-    # Apply pagination
-    paginated_posts = paginate_results(all_posts, query.offset, query.limit)
-
-    # Perform sentiment analysis if requested
-    sentiment_results = []
-    if query.include_sentiment:
-        try:
-            analyzer = SentimentAnalyzerFactory.create_analyzer(analyzer_name)
-            sentiment_results = analyzer.process_posts(paginated_posts)
-        except Exception as e:
-            print(f"Sentiment analysis error: {e}")
-            # Continue without sentiment analysis
-            pass
-
-    # Calculate sentiment distribution
-    sentiment_distribution = {
-        SentimentType.POSITIVE: 0,
-        SentimentType.NEGATIVE: 0,
-        SentimentType.NEUTRAL: 0,
-    }
-
-    for result in sentiment_results:
-        sentiment_distribution[result.sentiment] += 1
-
-    # Calculate average confidence
-    avg_confidence = 0.0
-    if sentiment_results:
-        avg_confidence = sum(r.confidence for r in sentiment_results) / len(
-            sentiment_results
+    # Perform analysis using service
+    try:
+        analysis_result = await analysis_service.analyze_posts(
+            query, analyzer_name, use_cache
         )
-
-    # Create analysis result
-    analysis_result = AnalysisResult(
-        query=query.query,
-        total_posts=len(all_posts),
-        sentiment_distribution=sentiment_distribution,
-        average_confidence=avg_confidence,
-        sources_used=sources_used,
-        posts=paginated_posts,
-        sentiment_results=sentiment_results,
-        created_at=datetime.utcnow(),
-        processing_time=time.time() - start_time,
-    )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
     # Cache the result
     if use_cache:
-        cache_manager.set(query, analysis_result)
-
-    # Store in database (background task)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(store_analysis_result, analysis_result)
+        cache_service.cache_result(query, analysis_result)
 
     return analysis_result
 
@@ -208,45 +176,28 @@ async def get_user_posts(
     Returns:
         List of posts from the user
     """
-    data_source = data_source_manager.get_data_source(source)
-
-    if not data_source:
-        raise HTTPException(status_code=404, detail=f"Data source '{source}' not found")
-
     try:
-        posts = await data_source.get_user_posts(user_id, limit)
-        return posts
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error fetching user posts: {str(e)}"
+        posts = await analysis_service.get_user_posts(
+            user_id, source, limit, include_sentiment
         )
+        return posts
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Data source management endpoints
 @app.get("/api/v1/datasources", response_model=List[Dict[str, Any]])
 async def get_data_sources():
     """Get all configured data sources"""
-    sources = []
-    for name in data_source_manager.get_configured_sources():
-        source = data_source_manager.get_data_source(name)
-        sources.append(
-            {
-                "name": name,
-                "enabled": source.config.enabled,
-                "available": source.is_available(),
-                "rate_limit": source.config.rate_limit,
-                "rate_limit_info": source.get_rate_limit_info(),
-            }
-        )
-    return sources
+    return data_source_service.get_all_sources()
 
 
 @app.post("/api/v1/datasources", response_model=Dict[str, str])
 async def add_data_source(config: DataSourceConfig):
     """Add a new data source"""
-    if data_source_manager.add_data_source(config):
-        # Store in database
-        await db_manager.save_data_source_config(config)
+    if await data_source_service.add_source(config):
         return {"message": f"Data source '{config.name}' added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Failed to add data source")
@@ -255,9 +206,7 @@ async def add_data_source(config: DataSourceConfig):
 @app.put("/api/v1/datasources/{name}", response_model=Dict[str, str])
 async def update_data_source(name: str, config: DataSourceConfig):
     """Update data source configuration"""
-    if data_source_manager.update_source_config(name, config):
-        # Update in database
-        await db_manager.update_data_source_config(name, config)
+    if await data_source_service.update_source(name, config):
         return {"message": f"Data source '{name}' updated successfully"}
     else:
         raise HTTPException(status_code=404, detail="Data source not found")
@@ -266,9 +215,7 @@ async def update_data_source(name: str, config: DataSourceConfig):
 @app.delete("/api/v1/datasources/{name}", response_model=Dict[str, str])
 async def remove_data_source(name: str):
     """Remove a data source"""
-    if data_source_manager.remove_data_source(name):
-        # Remove from database
-        await db_manager.delete_data_source_config(name)
+    if await data_source_service.remove_source(name):
         return {"message": f"Data source '{name}' removed successfully"}
     else:
         raise HTTPException(status_code=404, detail="Data source not found")
@@ -299,41 +246,31 @@ async def analyze_text(
         Sentiment analysis result
     """
     try:
-        analyzer = SentimentAnalyzerFactory.create_analyzer(analyzer_name)
-        result = analyzer.analyze(text)
+        result = analysis_service.analyze_single_text(text, analyzer_name)
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Cache management endpoints
 @app.get("/api/v1/cache/stats", response_model=Dict[str, Any])
 async def get_cache_stats():
     """Get cache statistics"""
-    return cache_manager.get_stats()
+    return cache_service.get_stats()
 
 
 @app.delete("/api/v1/cache/clear", response_model=Dict[str, Any])
 async def clear_cache():
     """Clear all cache entries"""
-    cleared = cache_manager.clear_all()
+    cleared = cache_service.clear_all()
     return {"message": f"Cleared {cleared} cache entries"}
 
 
 @app.delete("/api/v1/cache/expired", response_model=Dict[str, Any])
 async def clear_expired_cache():
     """Clear expired cache entries"""
-    cleared = cache_manager.clear_expired()
+    cleared = cache_service.clear_expired()
     return {"message": f"Cleared {cleared} expired cache entries"}
-
-
-# Background tasks
-async def store_analysis_result(result: AnalysisResult):
-    """Store analysis result in database (background task)"""
-    try:
-        await db_manager.store_analysis_result(result)
-    except Exception as e:
-        print(f"Error storing analysis result: {e}")
 
 
 # Legacy endpoints for backward compatibility
@@ -342,7 +279,10 @@ async def legacy_search(search_term: str, limit: int = 50):
     """Legacy search endpoint for backward compatibility"""
     query = SearchQuery(query=search_term, limit=limit, include_sentiment=False)
 
-    result = await analyze_posts(query, analyzer_name="textblob", use_cache=True)
+    try:
+        result = await analysis_service.analyze_posts(query, analyzer_name="textblob", use_cache=True)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
     # Return in legacy format
     return {
