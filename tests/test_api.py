@@ -110,10 +110,9 @@ class TestAPI:
 
     def test_legacy_search_endpoint(self):
         """Test legacy search endpoint"""
-        with patch(
-            "src.core.datasources.data_source_manager.get_enabled_sources"
-        ) as mock_sources:
-            mock_sources.return_value = []
+        with patch("src.main.analysis_service") as mock_analysis_service:
+            # Mock the analyze_posts method to raise RuntimeError for no sources
+            mock_analysis_service.analyze_posts.side_effect = RuntimeError("No data sources available")
 
             response = self.client.get("/search/test")
             assert response.status_code == 503  # No sources available
