@@ -1,72 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Card, CardContent, Typography, Box, CircularProgress } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { Grid, Card, CardContent, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import ApiService from '../services/ApiService';
-
-const useStyles = makeStyles((theme) => ({
-  card: {
-    minHeight: 200,
-    margin: theme.spacing(1),
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing(2),
-  },
-  stat: {
-    textAlign: 'center',
-    marginBottom: theme.spacing(2),
-  },
-  statNumber: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: theme.palette.primary.main,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: theme.palette.text.secondary,
-  },
-  sentimentBar: {
-    height: 20,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: theme.spacing(1),
-  },
-  sentimentSegment: {
-    height: '100%',
-    display: 'inline-block',
-  },
-  positive: {
-    backgroundColor: '#4caf50',
-  },
-  negative: {
-    backgroundColor: '#f44336',
-  },
-  neutral: {
-    backgroundColor: '#ff9800',
-  },
-  regionItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing(1),
-    borderBottom: '1px solid #eee',
-  },
-  loading: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 200,
-  },
-}));
 
 interface DashboardProps {
   height?: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ height = "80vh" }) => {
-  const classes = useStyles();
   const [summary, setSummary] = useState<any>(null);
   const [geographicData, setGeographicData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +16,7 @@ const Dashboard: React.FC<DashboardProps> = ({ height = "80vh" }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const apiService = new ApiService(); // Create inside useEffect
+        const apiService = new ApiService();
         const [summaryResponse, geographicResponse] = await Promise.all([
           apiService.getDashboardSummary(),
           apiService.getGeographicSentiment({ limit: 5 })
@@ -94,187 +34,218 @@ const Dashboard: React.FC<DashboardProps> = ({ height = "80vh" }) => {
     };
 
     fetchData();
-  }, []); // Empty dependency array
+  }, []);
 
   if (loading) {
     return (
-      <Box className={classes.loading}>
-        <CircularProgress />
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        height={200}
+        flexDirection="column"
+        gap={2}
+      >
+        <CircularProgress color="primary" />
+        <Typography variant="body2" color="text.secondary">
+          Loading dashboard data...
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box className={classes.loading}>
-        <Typography color="error">{error}</Typography>
+      <Box sx={{ p: 2 }}>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
-  const renderSentimentBar = (distribution: any) => {
-    const total = distribution.positive + distribution.negative + distribution.neutral;
+  // Helper function to render sentiment bar
+  const renderSentimentBar = (positive: number, negative: number, neutral: number) => {
+    const total = positive + negative + neutral;
     if (total === 0) return null;
-
-    const positivePercent = (distribution.positive / total) * 100;
-    const negativePercent = (distribution.negative / total) * 100;
-    const neutralPercent = (distribution.neutral / total) * 100;
-
+    
+    const positivePercent = (positive / total) * 100;
+    const negativePercent = (negative / total) * 100;
+    const neutralPercent = (neutral / total) * 100;
+    
     return (
-      <div className={classes.sentimentBar}>
-        <div 
-          className={`${classes.sentimentSegment} ${classes.positive}`}
-          style={{ width: `${positivePercent}%` }}
+      <Box 
+        sx={{
+          height: 20,
+          backgroundColor: '#f0f0f0',
+          borderRadius: 2,
+          overflow: 'hidden',
+          mb: 1,
+          display: 'flex'
+        }}
+      >
+        <Box 
+          sx={{ 
+            backgroundColor: '#4caf50', 
+            width: `${positivePercent}%` 
+          }} 
         />
-        <div 
-          className={`${classes.sentimentSegment} ${classes.negative}`}
-          style={{ width: `${negativePercent}%` }}
+        <Box 
+          sx={{ 
+            backgroundColor: '#f44336', 
+            width: `${negativePercent}%` 
+          }} 
         />
-        <div 
-          className={`${classes.sentimentSegment} ${classes.neutral}`}
-          style={{ width: `${neutralPercent}%` }}
+        <Box 
+          sx={{ 
+            backgroundColor: '#ff9800', 
+            width: `${neutralPercent}%` 
+          }} 
         />
-      </div>
+      </Box>
     );
   };
 
   return (
-    <Box style={{ height, overflow: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        Geographic Interest Dashboard
-      </Typography>
-      
+    <Box sx={{ height, overflow: 'auto' }}>
       <Grid container spacing={3}>
         {/* Summary Statistics */}
-        <Grid item xs={12} md={4}>
-          <Card className={classes.card}>
+        <Grid item xs={12} md={6}>
+          <Card 
+            sx={{ 
+              minHeight: 200, 
+              borderRadius: 3,
+              boxShadow: 2,
+              '&:hover': { boxShadow: 4 }
+            }}
+          >
             <CardContent>
-              <Typography className={classes.cardTitle}>
-                Summary Statistics
+              <Typography 
+                variant="h6" 
+                component="h2" 
+                gutterBottom
+                sx={{ 
+                  fontWeight: 600,
+                  color: 'primary.main'
+                }}
+              >
+                Analytics Summary
               </Typography>
               
-              <div className={classes.stat}>
-                <div className={classes.statNumber}>
-                  {summary?.total_posts_with_location || 0}
-                </div>
-                <div className={classes.statLabel}>
-                  Posts with Location
-                </div>
-              </div>
-              
-              <div className={classes.stat}>
-                <div className={classes.statNumber}>
-                  {summary?.total_unique_locations || 0}
-                </div>
-                <div className={classes.statLabel}>
-                  Unique Locations
-                </div>
-              </div>
-
-              {summary?.note && (
-                <Typography variant="caption" color="textSecondary">
-                  {summary.note}
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Overall Sentiment Distribution */}
-        <Grid item xs={12} md={4}>
-          <Card className={classes.card}>
-            <CardContent>
-              <Typography className={classes.cardTitle}>
-                Overall Sentiment
-              </Typography>
-              
-              {summary?.overall_sentiment_distribution && (
-                <>
-                  {renderSentimentBar(summary.overall_sentiment_distribution)}
-                  
-                  <Box mt={2}>
-                    <Typography variant="body2">
-                      <span style={{ color: '#4caf50' }}>●</span> Positive: {summary.overall_sentiment_distribution.positive}
-                    </Typography>
-                    <Typography variant="body2">
-                      <span style={{ color: '#f44336' }}>●</span> Negative: {summary.overall_sentiment_distribution.negative}
-                    </Typography>
-                    <Typography variant="body2">
-                      <span style={{ color: '#ff9800' }}>●</span> Neutral: {summary.overall_sentiment_distribution.neutral}
-                    </Typography>
-                  </Box>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Top Regions */}
-        <Grid item xs={12} md={4}>
-          <Card className={classes.card}>
-            <CardContent>
-              <Typography className={classes.cardTitle}>
-                Top Regions
-              </Typography>
-              
-              {summary?.top_regions?.map((region: any, index: number) => (
-                <div key={index} className={classes.regionItem}>
-                  <Typography variant="body2">
-                    {region.location}
-                  </Typography>
-                  <Typography variant="body2" color="primary">
-                    {region.post_count} posts
-                  </Typography>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Geographic Sentiment Details */}
-        <Grid item xs={12}>
-          <Card className={classes.card}>
-            <CardContent>
-              <Typography className={classes.cardTitle}>
-                Geographic Sentiment Analysis
-              </Typography>
-              
-              <Grid container spacing={2}>
-                {geographicData?.geographic_data?.map((location: any, index: number) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          {location.location}
-                        </Typography>
-                        
-                        <Typography variant="body2" color="textSecondary">
-                          {location.total_posts} posts • {(location.average_confidence * 100).toFixed(1)}% confidence
-                        </Typography>
-                        
-                        <Box mt={2}>
-                          {renderSentimentBar(location.sentiment_distribution)}
-                        </Box>
-                        
-                        <Box mt={1}>
-                          <Typography variant="caption">
-                            Positive: {location.sentiment_distribution.positive} • 
-                            Negative: {location.sentiment_distribution.negative} • 
-                            Neutral: {location.sentiment_distribution.neutral}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
+              {summary ? (
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Box textAlign="center" mb={2}>
+                      <Typography 
+                        variant="h3" 
+                        sx={{ 
+                          fontWeight: 600,
+                          color: 'primary.main'
+                        }}
+                      >
+                        {summary.total_posts || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Total Posts
+                      </Typography>
+                    </Box>
                   </Grid>
-                ))}
-              </Grid>
+                  <Grid item xs={6}>
+                    <Box textAlign="center" mb={2}>
+                      <Typography 
+                        variant="h3" 
+                        sx={{ 
+                          fontWeight: 600,
+                          color: 'primary.main'
+                        }}
+                      >
+                        {summary.active_sources || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Active Sources
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="body2" gutterBottom>
+                      Sentiment Distribution
+                    </Typography>
+                    {renderSentimentBar(
+                      summary.sentiment?.positive || 0,
+                      summary.sentiment?.negative || 0,
+                      summary.sentiment?.neutral || 0
+                    )}
+                    <Box display="flex" justifyContent="space-between" fontSize="small">
+                      <Typography variant="caption" color="success.main">
+                        Positive: {summary.sentiment?.positive || 0}
+                      </Typography>
+                      <Typography variant="caption" color="error.main">
+                        Negative: {summary.sentiment?.negative || 0}
+                      </Typography>
+                      <Typography variant="caption" color="warning.main">
+                        Neutral: {summary.sentiment?.neutral || 0}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              ) : (
+                <Typography color="text.secondary">No summary data available</Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
-              {geographicData?.note && (
-                <Box mt={2}>
-                  <Typography variant="caption" color="textSecondary">
-                    {geographicData.note}
-                  </Typography>
+        {/* Geographic Data */}
+        <Grid item xs={12} md={6}>
+          <Card 
+            sx={{ 
+              minHeight: 200,
+              borderRadius: 3,
+              boxShadow: 2,
+              '&:hover': { boxShadow: 4 }
+            }}
+          >
+            <CardContent>
+              <Typography 
+                variant="h6" 
+                component="h2" 
+                gutterBottom
+                sx={{ 
+                  fontWeight: 600,
+                  color: 'primary.main'
+                }}
+              >
+                Top Regions by Activity
+              </Typography>
+              
+              {geographicData && geographicData.length > 0 ? (
+                <Box>
+                  {geographicData.slice(0, 5).map((region: any, index: number) => (
+                    <Box 
+                      key={index}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        py: 1,
+                        px: 1,
+                        borderBottom: index < 4 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Typography variant="body2">
+                        {region.location || 'Unknown'}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        fontWeight={500}
+                        color="primary.main"
+                      >
+                        {region.count || 0}
+                      </Typography>
+                    </Box>
+                  ))}
                 </Box>
+              ) : (
+                <Typography color="text.secondary">No geographic data available</Typography>
               )}
             </CardContent>
           </Card>

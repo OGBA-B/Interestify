@@ -1,25 +1,44 @@
 import React from 'react';
-import { Card } from '@material-ui/core';
+import { Card, CardContent, Typography, Box } from '@mui/material';
  
 interface PanelProps {
-    children: JSX.Element,
+    children: React.ReactNode,
     width?: string,
     height?: string,
     id?: string,
-    overflow?: string
+    overflow?: string,
+    title?: string
 }
 
 const Panel = (props: PanelProps): JSX.Element => {
-    var style = {
-        width: (props.width) ? props.width : undefined,
-        height: (props.height) ? props.height : undefined,
-        paddingTop: '15px',
-        overflow: props.overflow
+    const style = {
+        width: props.width || undefined,
+        height: props.height || undefined,
+        overflow: props.overflow,
     };
 
     return (
-        <Card id={ props.id } className="panel" style={ style }>
-            { props.children }
+        <Card 
+            id={props.id} 
+            sx={{
+                ...style,
+                borderRadius: 3,
+                boxShadow: 2,
+                '&:hover': {
+                    boxShadow: 3,
+                },
+            }}
+        >
+            <CardContent sx={{ p: 3 }}>
+                {props.title && (
+                    <Typography variant="h6" component="h2" gutterBottom>
+                        {props.title}
+                    </Typography>
+                )}
+                <Box>
+                    {props.children}
+                </Box>
+            </CardContent>
         </Card>
     );
 }

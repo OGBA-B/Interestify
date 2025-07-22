@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@material-ui/core';
-import TextField  from '@material-ui/core/TextField';
+import { Button, TextField, Box, Stack } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 interface SearchFormProps {
     dispatch: Function,
@@ -19,16 +19,37 @@ const SearchForm = (props: SearchFormProps): JSX.Element => {
     }
 
     return (
-        <form action="GET" onSubmit={ ($event) => {
+        <Box component="form" onSubmit={($event: React.FormEvent<HTMLFormElement>) => {
             $event.preventDefault();
             dispatch({ type: 'startSearch', payload: { query: searchKey } });
-        } }>
-            <div className="row d-flex align-items-baseline justify-content-center">
-                <TextField autoFocus size="small" type="text" variant="outlined" value={ searchKey } onChange={ handleSearchChange }
-                            placeholder="search" style={ { padding: '10px' } } />
-                <Button type="submit" className="btn-primary" variant="contained">Search</Button>
-            </div>
-        </form>
+        }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+                <TextField 
+                    autoFocus 
+                    size="small" 
+                    type="text" 
+                    variant="outlined" 
+                    value={searchKey} 
+                    onChange={handleSearchChange}
+                    placeholder="search" 
+                    fullWidth
+                    sx={{ flexGrow: 1 }}
+                />
+                <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<SearchIcon />}
+                    sx={{ 
+                        borderRadius: 5,
+                        px: 3,
+                        py: 1.5,
+                    }}
+                >
+                    Search
+                </Button>
+            </Stack>
+        </Box>
     );
 }
 
