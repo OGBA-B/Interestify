@@ -92,3 +92,111 @@ def test_dashboard_endpoints_cors():
     response = client.options("/api/v1/dashboard/summary")
     # The OPTIONS request should be handled by CORS middleware
     assert response.status_code in [200, 405]  # 405 if OPTIONS not explicitly handled
+
+
+def test_dashboard_heat_map():
+    """Test heat map endpoint"""
+    response = client.get("/api/v1/dashboard/heat-map")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "heat_map_data" in data
+    assert "timeframe" in data
+    assert "resolution" in data
+    assert "start_date" in data
+    assert "end_date" in data
+    assert "total_topics" in data
+    
+    # Check heat map data structure
+    if data["heat_map_data"]:
+        first_topic = data["heat_map_data"][0]
+        assert "topic" in first_topic
+        assert "time_series" in first_topic
+        
+        if first_topic["time_series"]:
+            first_point = first_topic["time_series"][0]
+            assert "timestamp" in first_point
+            assert "positive" in first_point
+            assert "negative" in first_point
+            assert "neutral" in first_point
+            assert "sentiment_score" in first_point
+
+
+def test_dashboard_heat_map_with_params():
+    """Test heat map endpoint with parameters"""
+    response = client.get("/api/v1/dashboard/heat-map?topic=test&timeframe=1d&resolution=hourly")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["timeframe"] == "1d"
+    assert data["resolution"] == "hourly"
+    assert data["topic_filter"] == "test"
+
+
+def test_dashboard_analytics():
+    """Test advanced analytics endpoint"""
+    response = client.get("/api/v1/dashboard/analytics")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert "engagement_metrics" in data
+    assert "user_demographics" in data
+    assert "platform_performance" in data
+    assert "sentiment_trends" in data
+    assert "topic_sentiment_matrix" in data
+    assert "generated_at" in data
+    
+    # Check engagement metrics structure
+    engagement = data["engagement_metrics"]
+    assert "avg_likes_per_post" in engagement
+    assert "avg_shares_per_post" in engagement
+    assert "avg_comments_per_post" in engagement
+    assert "engagement_rate" in engagement
+    
+    # Check user demographics structure
+    if data["user_demographics"]:
+        demo = data["user_demographics"][0]
+        assert "age_group" in demo
+        assert "percentage" in demo
+        assert "sentiment_bias" in demo
+    
+    # Check platform performance structure
+    if data["platform_performance"]:
+        platform = data["platform_performance"][0]
+        assert "platform" in platform
+        assert "posts" in platform
+        assert "avg_sentiment" in platform
+        assert "response_time" in platform
+
+
+def test_dashboard_summary_enhanced():
+    """Test enhanced dashboard summary endpoint"""
+    response = client.get("/api/v1/dashboard/summary")
+    assert response.status_code == 200
+    
+    data = response.json()
+    # Test new fields in enhanced summary
+    assert "total_posts" in data
+    assert "trending_topics" in data
+    assert "recent_activity" in data
+    assert "performance_metrics" in data
+    
+    # Check trending topics structure
+    if data["trending_topics"]:
+        topic = data["trending_topics"][0]
+        assert "topic" in topic
+        assert "mentions" in topic
+        assert "sentiment_score" in topic
+    
+    # Check recent activity structure
+    if data["recent_activity"]:
+        activity = data["recent_activity"][0]
+        assert "timestamp" in activity
+        assert "event" in activity
+    
+    # Check performance metrics structure
+    perf = data["performance_metrics"]
+    assert "avg_processing_time" in perf
+    assert "api_response_time" in perf
+    assert "cache_hit_rate" in perf
+    assert "uptime_percentage" in perf

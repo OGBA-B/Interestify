@@ -25,4 +25,13 @@ export default class ApiService {
     getInterestTrends(params: any = {}) {
         return API.get('/api/v1/dashboard/interest-trends', { params });
     }
+
+    // New enhanced dashboard endpoints
+    getSentimentHeatMap(params: any = {}) {
+        return API.get('/api/v1/dashboard/heat-map', { params });
+    }
+
+    getAdvancedAnalytics() {
+        return API.get('/api/v1/dashboard/analytics');
+    }
 }
