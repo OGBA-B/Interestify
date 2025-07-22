@@ -238,22 +238,48 @@ const materialTheme = createTheme({
         },
       },
     },
-    // Material Design 3 TextField styling
+    // Material Design 3 TextField styling - Softer Design
     MuiTextField: {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 4,
+            borderRadius: 16, // Increased from 4 to 16 for softer appearance
+            backgroundColor: 'rgba(103, 80, 164, 0.04)', // Subtle background tint
             '& fieldset': {
-              borderColor: materialColors.outline.main,
+              borderColor: materialColors.outline.variant, // Softer border color
+              borderWidth: 1,
             },
             '&:hover fieldset': {
-              borderColor: materialColors.primary.main,
+              borderColor: materialColors.primary.light, // Softer hover color
+              borderWidth: 1,
             },
             '&.Mui-focused fieldset': {
               borderColor: materialColors.primary.main,
               borderWidth: 2,
             },
+          },
+          '& .MuiFilledInput-root': {
+            borderRadius: 16, // Softer border radius for filled variant
+            backgroundColor: materialColors.surface.variant,
+            boxShadow: '0px 1px 3px 0px rgba(0, 0, 0, 0.12)', // Subtle elevation
+            border: 'none',
+            '&:before': {
+              display: 'none', // Remove default underline
+            },
+            '&:after': {
+              display: 'none', // Remove focus underline
+            },
+            '&:hover': {
+              backgroundColor: materialColors.surface.containerHighest,
+              boxShadow: '0px 2px 4px 0px rgba(0, 0, 0, 0.16)', // Slightly stronger shadow on hover
+            },
+            '&.Mui-focused': {
+              backgroundColor: materialColors.surface.containerHighest,
+              boxShadow: `0px 2px 8px 0px rgba(103, 80, 164, 0.24)`, // Primary color shadow when focused
+            },
+          },
+          '& .MuiInputBase-input': {
+            padding: '16px 20px', // More generous padding
           },
         },
       },
