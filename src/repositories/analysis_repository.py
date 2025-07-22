@@ -64,7 +64,7 @@ class DatabaseAnalysisRepository(AnalysisRepository):
             await self.db_manager.store_analysis_result(result)
             return True
         except Exception as e:
-            print(f"Error saving analysis result: {e}")
+            logger.error(f"Error saving analysis result: {e}")
             return False
     
     async def get_analysis_result(self, query: str, created_after: Optional[datetime] = None) -> Optional[AnalysisResult]:
