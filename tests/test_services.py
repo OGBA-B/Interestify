@@ -89,6 +89,106 @@ class TestAnalysisService:
             assert result["sentiment"] == "positive"
             assert result["confidence"] == 0.8
 
+    def test_analyze_single_text_error(self):
+        """Test analyzing single text with error"""
+        with patch('src.services.analysis_service.SentimentAnalyzerFactory') as mock_factory:
+            mock_factory.create_analyzer.side_effect = RuntimeError("Analyzer error")
+            
+            with pytest.raises(RuntimeError, match="Analyzer error"):
+                self.service.analyze_single_text("Test text", "invalid")
+
+    @pytest.mark.asyncio
+    async def test_get_posts_by_source_success(self):
+        """Test getting posts by source successfully"""
+        mock_posts = [Mock(id="1", text="Test post")]
+        self.mock_analysis_repository.get_posts_by_source = AsyncMock(return_value=mock_posts)
+        
+        posts = await self.service.get_posts_by_source("twitter", limit=50)
+        
+        assert posts == mock_posts
+        self.mock_analysis_repository.get_posts_by_source.assert_called_once_with("twitter", 50)
+
+    @pytest.mark.asyncio
+    async def test_get_posts_by_source_error(self):
+        """Test getting posts by source with error"""
+        self.mock_analysis_repository.get_posts_by_source = AsyncMock(side_effect=Exception("DB error"))
+        
+        with pytest.raises(Exception, match="DB error"):
+            await self.service.get_posts_by_source("twitter", limit=50)
+
+    @pytest.mark.asyncio
+    async def test_cleanup_old_analysis_data_success(self):
+        """Test cleaning up old analysis data successfully"""
+        self.mock_analysis_repository.cleanup_old_data = AsyncMock(return_value=5)
+        
+        count = await self.service.cleanup_old_analysis_data(older_than_days=30)
+        
+        assert count == 5
+        self.mock_analysis_repository.cleanup_old_data.assert_called_once_with(30)
+
+    @pytest.mark.asyncio
+    async def test_cleanup_old_analysis_data_error(self):
+        """Test cleaning up old analysis data with error"""
+        self.mock_analysis_repository.cleanup_old_data = AsyncMock(side_effect=Exception("DB error"))
+        
+        with pytest.raises(Exception, match="DB error"):
+            await self.service.cleanup_old_analysis_data(older_than_days=30)
+
+    @pytest.mark.asyncio
+    async def test_analyze_posts_with_sentiment(self):
+        """Test analyze_posts with sentiment analysis enabled"""
+        from src.models.schemas import Post, SentimentResult, EngagementStats
+        from datetime import datetime
+        
+        # Create real Post object
+        mock_post = Post(
+            id="1",
+            text="Test post",
+            timestamp=datetime.utcnow(),
+            author="testuser",
+            author_id="testuser",
+            engagement_stats=EngagementStats(),
+            source="twitter",
+            confidence_score=1.0
+        )
+        
+        mock_source = Mock()
+        mock_source.name = "twitter"
+        mock_source.search_posts = AsyncMock(return_value=[mock_post])
+        
+        self.mock_data_source_manager.get_enabled_sources.return_value = [mock_source]
+        self.mock_analysis_repository.save_sentiment_results = AsyncMock()
+        self.mock_analysis_repository.save_analysis_result = AsyncMock()
+        self.mock_analysis_repository.save_posts = AsyncMock()
+        
+        query = SearchQuery(query="test", limit=10, include_sentiment=True)
+        
+        with patch('src.services.analysis_service.SentimentAnalyzerFactory') as mock_factory:
+            mock_analyzer = Mock()
+            # Create real SentimentResult object
+            mock_sentiment_result = SentimentResult(
+                post_id="1",
+                sentiment=SentimentType.POSITIVE,
+                confidence=0.8,
+                polarity=0.5,
+                subjectivity=0.6,
+                analyzer_used="textblob",
+                created_at=datetime.utcnow()
+            )
+            mock_analyzer.process_posts.return_value = [mock_sentiment_result]
+            mock_factory.create_analyzer.return_value = mock_analyzer
+            
+            with patch('src.services.analysis_service.paginate_results') as mock_paginate:
+                mock_paginate.return_value = [mock_post]
+                
+                result = await self.service.analyze_posts(query, analyzer_name="textblob")
+                
+                assert isinstance(result, AnalysisResult)
+                assert result.total_posts == 1
+                assert result.sentiment_distribution[SentimentType.POSITIVE] == 1
+                mock_factory.create_analyzer.assert_called_once_with("textblob")
+                mock_analyzer.process_posts.assert_called_once()
+
 
 class TestCacheService:
     """Test the CacheService"""

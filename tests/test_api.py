@@ -117,11 +117,10 @@ class TestAPI:
             response = self.client.get("/search/test")
             assert response.status_code == 503  # No sources available
 
-    def test_legacy_followers_endpoint(self):
-        """Test legacy followers endpoint (deprecated)"""
+    def test_removed_deprecated_followers_endpoint(self):
+        """Test that deprecated followers endpoint has been removed"""
         response = self.client.get("/followers/testuser")
-        assert response.status_code == 410  # Gone
-        assert "deprecated" in response.json()["detail"].lower()
+        assert response.status_code == 404  # Not Found - endpoint removed
 
     def test_get_user_posts_invalid_source(self):
         """Test getting user posts with invalid source"""

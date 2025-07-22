@@ -292,13 +292,7 @@ async def legacy_search(search_term: str, limit: int = 50):
     }
 
 
-@app.get("/followers/{screen_name}")
-async def legacy_get_followers(screen_name: str):
-    """Legacy followers endpoint (deprecated)"""
-    raise HTTPException(
-        status_code=410,
-        detail="This endpoint is deprecated. Use /api/v1/users/{user_id}/posts instead",
-    )
+
 
 
 if __name__ == "__main__":

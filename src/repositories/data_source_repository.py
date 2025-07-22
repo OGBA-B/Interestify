@@ -4,11 +4,14 @@ Data Source Repository Interface and Implementation
 Handles persistence operations for data source configurations.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from src.models.schemas import DataSourceConfig
 from src.utils.database import DatabaseManager
+
+logger = logging.getLogger(__name__)
 
 
 class DataSourceRepository(ABC):
