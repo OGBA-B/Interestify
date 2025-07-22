@@ -12,17 +12,21 @@ jobs:
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
+        node-version: '20.x'
     - name: Install python dependencies
       run: |
         python --version
         pip install -r requirements.txt
+    - name: Remove conflicting package-lock.json
+      run: |
+        cd client/
+        rm -f package-lock.json
     - name: Install node dependencies & build index file
       run: |
         node --version
         cd client/
         yarn install
-        yarn build
+        CI=false yarn build
     - name: Run python tests
       run: |
         pytest

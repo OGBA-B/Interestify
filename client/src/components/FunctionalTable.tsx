@@ -331,13 +331,13 @@ const InterestifyTable = (props: TableProps) => {
                                 count={ state.bodyData.length }
                                 rowsPerPage={ state.pagination.rowsPerPage }
                                 page={ state.pagination.currentPageIndex }
-                                onPageChange={ (_event, page) => {
+                                onChangePage={ (_event, page) => {
                                     dispatch({
                                         type: 'updatePagination',
                                         payload: { currentPageIndex: page, rowsPerPage: state.pagination!.rowsPerPage }
                                     });
                                 } }
-                                onRowsPerPageChange={ $event => { changeRowsPerPage($event, dispatch) } }
+                                onChangeRowsPerPage={ $event => { changeRowsPerPage($event, dispatch) } }
                                 ActionsComponent={ paginationNavActions } 
                                 className="ml-auto" />
                         </TableRow>
