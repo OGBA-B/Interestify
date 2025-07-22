@@ -57,7 +57,7 @@ class DatabaseDataSourceRepository(DataSourceRepository):
             await self.db_manager.save_data_source_config(config)
             return True
         except Exception as e:
-            print(f"Error saving data source config: {e}")
+            logger.error(f"Error saving data source config: {e}")
             return False
     
     async def get_config(self, name: str) -> Optional[DataSourceConfig]:
