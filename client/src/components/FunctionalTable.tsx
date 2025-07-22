@@ -1,10 +1,6 @@
 import React, { useContext, useReducer, useEffect } from 'react';
-import { Table, TableHead, TableRow, TableCell, TableBody, IconButton, TableSortLabel, TableFooter, TablePagination } from '@material-ui/core';
-import { AddCircle, Delete } from '@material-ui/icons';
-import LastPageIcon from '@material-ui/icons/LastPage';
-import FirstPageIcon from '@material-ui/icons/FirstPage';
-import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
-import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
+import { Table, TableHead, TableRow, TableCell, TableBody, IconButton, TableSortLabel, TableFooter, TablePagination } from '@mui/material';
+import { AddCircle, Delete, LastPage, FirstPage, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import * as _ from 'lodash';
 
 export interface TableHeader {
@@ -286,7 +282,7 @@ const InterestifyTable = (props: TableProps) => {
                         onClick={ () => { dispatch({ type: 'updatePagination', payload: { currentPageIndex: 0, rowsPerPage: rowsPerPage } }); } }
                         disabled={ currentPageIndex <= 0 }
                         aria-label="first  page">
-                            { <FirstPageIcon /> }
+                            { <FirstPage /> }
                     </IconButton>
                 
                     <IconButton
@@ -307,7 +303,7 @@ const InterestifyTable = (props: TableProps) => {
                         onClick={ () => { dispatch({ type: 'updatePagination', payload: { currentPageIndex: lastPageIndex, rowsPerPage: rowsPerPage } }); } }
                         disabled={ currentPageIndex >= lastPageIndex }
                         aria-label="last page">
-                            { <LastPageIcon />  }
+                            { <LastPage />  }
                     </IconButton>
                 </div>
             );
@@ -331,13 +327,13 @@ const InterestifyTable = (props: TableProps) => {
                                 count={ state.bodyData.length }
                                 rowsPerPage={ state.pagination.rowsPerPage }
                                 page={ state.pagination.currentPageIndex }
-                                onChangePage={ (_event, page) => {
+                                onPageChange={ (_event: unknown, page: number) => {
                                     dispatch({
                                         type: 'updatePagination',
                                         payload: { currentPageIndex: page, rowsPerPage: state.pagination!.rowsPerPage }
                                     });
                                 } }
-                                onChangeRowsPerPage={ $event => { changeRowsPerPage($event, dispatch) } }
+                                onRowsPerPageChange={ ($event: React.ChangeEvent<HTMLInputElement>) => { changeRowsPerPage($event, dispatch) } }
                                 ActionsComponent={ paginationNavActions } 
                                 className="ml-auto" />
                         </TableRow>

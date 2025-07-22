@@ -1,36 +1,21 @@
 import React, { useState, useEffect, useContext, Context } from 'react';
 import Panel from '../components/Panel';
-import CircularProgress from '@material-ui/core/CircularProgress'
-import { Grid } from '@material-ui/core';
+import { CircularProgress, Grid, Typography, Box } from '@mui/material';
 
 interface AppletProps {
     title: string
     id?: string
     width?: string,
     height?: string,
-    children: JSX.Element,
+    children: React.ReactNode,
     StateContext: Context<any>,
     run: Function,
     Toolbar?: Function
 }
 
 const Applet = (props: AppletProps): JSX.Element => {
-
-    /**
-     * calucates the top disposition of the dialog loader
-     * based on the height of the panel
-     */
-    const disposition = () => {
-        if (props.height) {
-            var height = props.height;
-            var unit = height.substring(height.length - 2);
-            height = height.substring(0, height.length - 2);
-            return (parseInt(height) / 3) + unit;
-        } else return '';
-    }
-
     const { title, id, width, height, StateContext, run, Toolbar } = props;
-    const [ overflow, setOverflow ] = useState('hidden'); // set overflow initial state
+    const [overflow, setOverflow] = useState('hidden'); // set overflow initial state
 
     const state = useContext(StateContext); // context containing the state
 
@@ -43,41 +28,53 @@ const Applet = (props: AppletProps): JSX.Element => {
         if (state.tableData.body.length > 0) {
             setOverflow('scroll');
         }
-    }, [ state.tableData.body ]);
+    }, [state.tableData.body]);
 
     // run applet logic
     useEffect(() => {
         run();
-    }, [ run ]);
+    }, [run]);
 
     return (
-        <Panel id={ id } width={ width } height={ height } overflow={ overflow }>
-            <Grid container spacing={ 2 }>
-                <Grid item xs={ 12 }>
-                    <div className="h4 text-muted float-left pl-3 applet-title">{ title }</div>
-                </Grid>
+        <Panel id={id} width={width} height={height} overflow={overflow} title={title}>
+            <Grid container spacing={2}>
                 {
                     Toolbar && (
-                        <Grid item xs={ 12 }>
+                        <Grid item xs={12}>
                             <Toolbar />
                         </Grid>
                     )
                 }
                 {
                     state.isLoading && (
-                        <Grid item xs={ 12 }>
-                            <CircularProgress 
-                                variant="indeterminate"
-                                className="dialogLoader"
-                                style={{ top: disposition() }}
-                            />
+                        <Grid item xs={12}>
+                            <Box 
+                                display="flex" 
+                                justifyContent="center" 
+                                alignItems="center"
+                                sx={{ 
+                                    height: '200px',
+                                    flexDirection: 'column',
+                                    gap: 2
+                                }}
+                            >
+                                <CircularProgress 
+                                    color="primary"
+                                    size={40}
+                                />
+                                <Typography variant="body2" color="text.secondary">
+                                    Loading...
+                                </Typography>
+                            </Box>
                         </Grid>
                     )
                 }
                 {
                     !state.isLoading && (
-                        <Grid className="p-3" item xs={ 12 }>
-                            { props.children }
+                        <Grid item xs={12}>
+                            <Box sx={{ mt: 1 }}>
+                                {props.children}
+                            </Box>
                         </Grid>
                     )
                 }
