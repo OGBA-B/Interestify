@@ -36,22 +36,29 @@ class TestMainApplication:
         # Should not return 405 for OPTIONS
         assert response.status_code in [200, 204]
 
-    @patch("src.main.data_source_manager")
-    def test_datasources_list_endpoint(self, mock_manager):
+    @patch("src.main.data_source_service")
+    def test_datasources_list_endpoint(self, mock_data_source_service):
         """Test listing data sources"""
-        mock_manager.get_available_source_types.return_value = ["twitter", "reddit"]
-        mock_manager.get_configured_sources.return_value = ["twitter"]
-        mock_manager.get_enabled_sources.return_value = [
-            Mock(name="twitter", config=Mock(name="twitter"))
+        mock_data_source_service.get_all_sources.return_value = [
+            {
+                "name": "twitter",
+                "enabled": True,
+                "available": True,
+                "rate_limit": 100,
+                "rate_limit_info": {"remaining": 90, "reset_time": "2023-01-01T00:00:00Z"}
+            }
         ]
         
         response = self.client.get("/api/v1/datasources")
         assert response.status_code == 200
+        sources = response.json()
+        assert len(sources) == 1
+        assert sources[0]["name"] == "twitter"
 
-    @patch("src.main.cache_manager")
-    def test_cache_stats_endpoint(self, mock_cache):
+    @patch("src.main.cache_service")
+    def test_cache_stats_endpoint(self, mock_cache_service):
         """Test cache statistics endpoint"""
-        mock_cache.get_stats.return_value = {
+        mock_cache_service.get_stats.return_value = {
             "hits": 100,
             "misses": 20,
             "hit_rate": 0.83,
@@ -64,10 +71,10 @@ class TestMainApplication:
         assert "hits" in stats
         assert "hit_rate" in stats
 
-    @patch("src.main.cache_manager")
-    def test_cache_clear_endpoint(self, mock_cache):
+    @patch("src.main.cache_service")
+    def test_cache_clear_endpoint(self, mock_cache_service):
         """Test cache clear endpoint"""
-        mock_cache.clear_all.return_value = 10  # Number of cleared entries
+        mock_cache_service.clear_all.return_value = 10  # Number of cleared entries
         
         response = self.client.delete("/api/v1/cache/clear")
         assert response.status_code == 200
