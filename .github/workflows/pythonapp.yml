@@ -30,3 +30,94 @@ jobs:
     - name: Run python tests
       run: |
         pytest
+    - name: Install browser testing dependencies
+      run: |
+        pip install aiohttp
+    - name: Cleanup any existing processes
+      run: |
+        pkill -f "uvicorn\|serve" || true
+        sleep 2
+    - name: Start backend server
+      run: |
+        python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+        echo $! > backend.pid
+        sleep 10
+    - name: Serve frontend build
+      run: |
+        cd client/
+        npx serve -s build -p 3001 &
+        echo $! > frontend.pid
+        sleep 5
+    - name: Verify application loads in browser
+      run: |
+        cat > test_app_loads.py << 'EOF'
+        #!/usr/bin/env python3
+        """
+        Simple script to test that the application loads properly
+        """
+        import asyncio
+        import time
+        import sys
+        import aiohttp
+
+        async def test_backend_health():
+            """Test that backend health endpoint responds"""
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get('http://localhost:8000/health', timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            print(f"✓ Backend health check passed: {data.get('status')}")
+                            return True
+                        else:
+                            print(f"✗ Backend health check failed with status {response.status}")
+                            return False
+            except Exception as e:
+                print(f"✗ Backend health check failed: {e}")
+                return False
+
+        async def test_frontend_loads():
+            """Test that frontend serves static files"""
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get('http://localhost:3001', timeout=10) as response:
+                        if response.status == 200:
+                            text = await response.text()
+                            # Check for React app indicators
+                            if 'div' in text and ('root' in text or 'React' in text or 'static' in text):
+                                print("✓ Frontend loads successfully")
+                                return True
+                            else:
+                                print(f"✗ Frontend loaded but content seems wrong")
+                                return False
+                        else:
+                            print(f"✗ Frontend load failed with status {response.status}")
+                            return False
+            except Exception as e:
+                print(f"✗ Frontend load failed: {e}")
+                return False
+
+        async def main():
+            """Main test function"""
+            print("Testing application loading...")
+            
+            backend_ok = await test_backend_health()
+            frontend_ok = await test_frontend_loads()
+            
+            if backend_ok and frontend_ok:
+                print("✓ All tests passed!")
+                return True
+            else:
+                print("✗ Some tests failed!")
+                return False
+
+        if __name__ == "__main__":
+            result = asyncio.run(main())
+            sys.exit(0 if result else 1)
+        EOF
+        python test_app_loads.py
+    - name: Cleanup
+      if: always()
+      run: |
+        if [ -f backend.pid ]; then kill $(cat backend.pid) || true; fi
+        if [ -f client/frontend.pid ]; then kill $(cat client/frontend.pid) || true; fi
