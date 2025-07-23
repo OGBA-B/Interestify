@@ -76,6 +76,8 @@ class SecurityConfig(BaseModel):
     enable_request_validation: bool = Field(default=True, description="Enable strict request validation")
 
     def __init__(self, **kwargs):
+        if 'enable_encryption' not in kwargs:
+            kwargs['enable_encryption'] = True
         super().__init__(**kwargs)
         # Generate encryption key if not provided
         if self.enable_encryption and not self.encryption_key:
@@ -83,8 +85,8 @@ class SecurityConfig(BaseModel):
                 from cryptography.fernet import Fernet
                 self.encryption_key = Fernet.generate_key().decode()
             except ImportError:
-                # Cryptography not available, disable encryption
-                self.enable_encryption = False
+                import warnings
+                warnings.warn("Cryptography package not available. Encryption will fail at runtime.")
 
     @validator('jwt_algorithm')
     def validate_jwt_algorithm(cls, v):
