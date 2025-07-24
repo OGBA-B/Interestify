@@ -4,12 +4,15 @@ Analysis Repository Interface and Implementation
 Handles persistence operations for analysis results, posts, and sentiment data.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List, Optional
 
 from src.models.schemas import AnalysisResult, Post, SentimentResult
 from src.utils.database import DatabaseManager
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisRepository(ABC):
