@@ -83,8 +83,9 @@ class SecurityConfig(BaseModel):
                 from cryptography.fernet import Fernet
                 self.encryption_key = Fernet.generate_key().decode()
             except ImportError:
-                # Cryptography not available, disable encryption
-                self.enable_encryption = False
+                # Cryptography not available, leave encryption_key as None
+                # The fernet_cipher property will handle this gracefully
+                pass
 
     @validator('jwt_algorithm')
     def validate_jwt_algorithm(cls, v):
@@ -111,7 +112,7 @@ class SecurityConfig(BaseModel):
         
         cipher = self.fernet_cipher
         if cipher is None:
-            raise ValueError("Encryption is enabled but no valid encryption key is available")
+            raise ValueError("Encryption is enabled but cryptography package is not available or encryption key is invalid")
         
         return cipher.encrypt(data.encode()).decode()
 
@@ -122,7 +123,7 @@ class SecurityConfig(BaseModel):
         
         cipher = self.fernet_cipher
         if cipher is None:
-            raise ValueError("Encryption is enabled but no valid encryption key is available")
+            raise ValueError("Encryption is enabled but cryptography package is not available or encryption key is invalid")
         
         try:
             return cipher.decrypt(encrypted_data.encode()).decode()
