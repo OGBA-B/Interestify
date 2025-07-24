@@ -241,7 +241,6 @@ class TestDataSourceManager:
         assert status["mock"]["requests_per_hour"] == 100
 
 
-@pytest.mark.asyncio
 class TestTwitterDataSource:
     """Test Twitter data source"""
 
@@ -264,6 +263,7 @@ class TestTwitterDataSource:
         assert not twitter_source.is_available()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_success(self, mock_get):
         """Test successful post search"""
         mock_response = Mock()
@@ -313,6 +313,7 @@ class TestTwitterDataSource:
         assert posts[0].source == "twitter"
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_disabled_source(self, mock_get):
         """Test search when source is disabled"""
         config = DataSourceConfig(
@@ -327,6 +328,7 @@ class TestTwitterDataSource:
         mock_get.assert_not_called()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_api_error(self, mock_get):
         """Test search with API error"""
         mock_response = Mock()
@@ -339,6 +341,7 @@ class TestTwitterDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_exception(self, mock_get):
         """Test search with exception"""
         mock_get.side_effect = Exception("Network error")
@@ -349,6 +352,7 @@ class TestTwitterDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_success(self, mock_get):
         """Test successful user posts retrieval"""
         mock_response = Mock()
@@ -391,6 +395,7 @@ class TestTwitterDataSource:
         assert posts[0].author == "testuser"
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_disabled_source(self, mock_get):
         """Test user posts when source is disabled"""
         config = DataSourceConfig(
@@ -404,6 +409,7 @@ class TestTwitterDataSource:
         mock_get.assert_not_called()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_api_error(self, mock_get):
         """Test user posts with API error"""
         mock_response = Mock()
@@ -415,6 +421,7 @@ class TestTwitterDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_exception(self, mock_get):
         """Test user posts with exception"""
         mock_get.side_effect = Exception("Network error")
@@ -430,6 +437,7 @@ class TestTwitterDataSource:
         assert "remaining" in info
         assert "reset_time" in info
 
+    @pytest.mark.asyncio
     async def test_close_session(self):
         """Test closing session"""
         # Create a session first
@@ -440,13 +448,16 @@ class TestTwitterDataSource:
         await self.twitter_source.close()
         assert self.twitter_source.session is None
 
+    @pytest.mark.asyncio
     async def test_close_no_session(self):
         """Test closing when no session exists"""
         assert self.twitter_source.session is None
         await self.twitter_source.close()  # Should not raise error
         assert self.twitter_source.session is None
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_parse_twitter_response_with_date_params(self, mock_get):
         """Test search with date parameters"""
         from datetime import datetime
@@ -470,7 +481,9 @@ class TestTwitterDataSource:
         assert 'start_time' in params
         assert 'end_time' in params
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_parse_twitter_malformed_tweet(self, mock_get):
         """Test parsing malformed tweet data"""
         mock_response = Mock()
@@ -510,7 +523,6 @@ class TestTwitterDataSource:
         assert posts[0].id == "1"
 
 
-@pytest.mark.asyncio
 class TestRedditDataSource:
     """Test Reddit data source"""
 
@@ -523,6 +535,7 @@ class TestRedditDataSource:
         assert self.reddit_source.is_available()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_success(self, mock_get):
         """Test successful post search"""
         mock_response = Mock()
@@ -558,6 +571,7 @@ class TestRedditDataSource:
         assert posts[0].source == "reddit"
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_disabled_source(self, mock_get):
         """Test search when source is disabled"""
         config = DataSourceConfig(name="reddit", enabled=False, rate_limit=100)
@@ -570,6 +584,7 @@ class TestRedditDataSource:
         mock_get.assert_not_called()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_api_error(self, mock_get):
         """Test search with API error"""
         mock_response = Mock()
@@ -582,6 +597,7 @@ class TestRedditDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_exception(self, mock_get):
         """Test search with exception"""
         mock_get.side_effect = Exception("Network error")
@@ -592,6 +608,7 @@ class TestRedditDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_success(self, mock_get):
         """Test successful user posts retrieval"""
         mock_response = Mock()
@@ -625,6 +642,7 @@ class TestRedditDataSource:
         assert posts[0].author == "testuser"
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_disabled_source(self, mock_get):
         """Test user posts when source is disabled"""
         config = DataSourceConfig(name="reddit", enabled=False, rate_limit=100)
@@ -636,6 +654,7 @@ class TestRedditDataSource:
         mock_get.assert_not_called()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_api_error(self, mock_get):
         """Test user posts with API error"""
         mock_response = Mock()
@@ -647,6 +666,7 @@ class TestRedditDataSource:
         assert posts == []
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_get_user_posts_exception(self, mock_get):
         """Test user posts with exception"""
         mock_get.side_effect = Exception("Network error")
@@ -662,6 +682,7 @@ class TestRedditDataSource:
         assert "remaining" in info
         assert "reset_time" in info
 
+    @pytest.mark.asyncio
     async def test_close_session(self):
         """Test closing session"""
         # Create a session first
@@ -672,13 +693,16 @@ class TestRedditDataSource:
         await self.reddit_source.close()
         assert self.reddit_source.session is None
 
+    @pytest.mark.asyncio
     async def test_close_no_session(self):
         """Test closing when no session exists"""
         assert self.reddit_source.session is None
         await self.reddit_source.close()  # Should not raise error
         assert self.reddit_source.session is None
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_parse_reddit_response_deleted_post(self, mock_get):
         """Test parsing with deleted/removed posts"""
         mock_response = Mock()
@@ -737,7 +761,9 @@ class TestRedditDataSource:
         assert len(posts) == 1
         assert posts[0].id == "1"
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_parse_reddit_malformed_post(self, mock_get):
         """Test parsing malformed post data"""
         mock_response = Mock()
