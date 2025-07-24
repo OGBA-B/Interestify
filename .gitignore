@@ -10,3 +10,4 @@ setup_secrets.sh
 __pycache__/
 client/.yarn/
 client/.yarnrc.yml
+client/package-lock.json
