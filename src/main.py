@@ -273,32 +273,7 @@ async def clear_expired_cache():
     return {"message": f"Cleared {cleared} expired cache entries"}
 
 
-# Legacy endpoints for backward compatibility
-@app.get("/search/{search_term}")
-async def legacy_search(search_term: str, limit: int = 50):
-    """Legacy search endpoint for backward compatibility"""
-    query = SearchQuery(query=search_term, limit=limit, include_sentiment=False)
 
-    try:
-        result = await analysis_service.analyze_posts(query, analyzer_name="textblob", use_cache=True)
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-
-    # Return in legacy format
-    return {
-        "posts": [post.dict() for post in result.posts],
-        "total": result.total_posts,
-        "sources": result.sources_used,
-    }
-
-
-@app.get("/followers/{screen_name}")
-async def legacy_get_followers(screen_name: str):
-    """Legacy followers endpoint (deprecated)"""
-    raise HTTPException(
-        status_code=410,
-        detail="This endpoint is deprecated. Use /api/v1/users/{user_id}/posts instead",
-    )
 
 
 if __name__ == "__main__":
