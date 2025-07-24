@@ -263,6 +263,7 @@ class TestTwitterDataSource:
         assert not twitter_source.is_available()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_success(self, mock_get):
         """Test successful post search"""
         mock_response = Mock()
@@ -311,6 +312,216 @@ class TestTwitterDataSource:
         assert posts[0].author == "testuser"
         assert posts[0].source == "twitter"
 
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_disabled_source(self, mock_get):
+        """Test search when source is disabled"""
+        config = DataSourceConfig(
+            name="twitter", enabled=False, api_key="test_key", rate_limit=100
+        )
+        twitter_source = TwitterDataSource(config)
+        
+        query = SearchQuery(query="test", limit=10)
+        posts = await twitter_source.search_posts(query)
+        
+        assert posts == []
+        mock_get.assert_not_called()
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_api_error(self, mock_get):
+        """Test search with API error"""
+        mock_response = Mock()
+        mock_response.status = 429  # Rate limit error
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.twitter_source.search_posts(query)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_exception(self, mock_get):
+        """Test search with exception"""
+        mock_get.side_effect = Exception("Network error")
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.twitter_source.search_posts(query)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_success(self, mock_get):
+        """Test successful user posts retrieval"""
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(
+            return_value={
+                "data": [
+                    {
+                        "id": "1",
+                        "text": "User tweet",
+                        "created_at": "2023-01-01T00:00:00.000Z",
+                        "author_id": "user1",
+                        "public_metrics": {
+                            "like_count": 5,
+                            "retweet_count": 1,
+                            "reply_count": 0,
+                        },
+                        "lang": "en",
+                        "entities": {},
+                    }
+                ],
+                "includes": {
+                    "users": [
+                        {
+                            "id": "user1",
+                            "username": "testuser",
+                            "name": "Test User",
+                        }
+                    ]
+                },
+            }
+        )
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        posts = await self.twitter_source.get_user_posts("user1", limit=10)
+
+        assert len(posts) == 1
+        assert posts[0].id == "1"
+        assert posts[0].text == "User tweet"
+        assert posts[0].author == "testuser"
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_disabled_source(self, mock_get):
+        """Test user posts when source is disabled"""
+        config = DataSourceConfig(
+            name="twitter", enabled=False, api_key="test_key", rate_limit=100
+        )
+        twitter_source = TwitterDataSource(config)
+        
+        posts = await twitter_source.get_user_posts("user1", limit=10)
+        
+        assert posts == []
+        mock_get.assert_not_called()
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_api_error(self, mock_get):
+        """Test user posts with API error"""
+        mock_response = Mock()
+        mock_response.status = 404
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        posts = await self.twitter_source.get_user_posts("user1", limit=10)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_exception(self, mock_get):
+        """Test user posts with exception"""
+        mock_get.side_effect = Exception("Network error")
+
+        posts = await self.twitter_source.get_user_posts("user1", limit=10)
+
+        assert posts == []
+
+    def test_get_rate_limit_info(self):
+        """Test rate limit info"""
+        info = self.twitter_source.get_rate_limit_info()
+        assert info["requests_per_hour"] == 100
+        assert "remaining" in info
+        assert "reset_time" in info
+
+    @pytest.mark.asyncio
+    async def test_close_session(self):
+        """Test closing session"""
+        # Create a session first
+        await self.twitter_source._get_session()
+        assert self.twitter_source.session is not None
+        
+        # Close it
+        await self.twitter_source.close()
+        assert self.twitter_source.session is None
+
+    @pytest.mark.asyncio
+    async def test_close_no_session(self):
+        """Test closing when no session exists"""
+        assert self.twitter_source.session is None
+        await self.twitter_source.close()  # Should not raise error
+        assert self.twitter_source.session is None
+
+    @pytest.mark.asyncio
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_parse_twitter_response_with_date_params(self, mock_get):
+        """Test search with date parameters"""
+        from datetime import datetime
+        
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value={"data": []})
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(
+            query="test", 
+            limit=10,
+            start_date=datetime(2023, 1, 1),
+            end_date=datetime(2023, 1, 2)
+        )
+        await self.twitter_source.search_posts(query)
+
+        # Verify the call was made with date parameters
+        call_args = mock_get.call_args
+        params = call_args[1]['params']
+        assert 'start_time' in params
+        assert 'end_time' in params
+
+    @pytest.mark.asyncio
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_parse_twitter_malformed_tweet(self, mock_get):
+        """Test parsing malformed tweet data"""
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(
+            return_value={
+                "data": [
+                    {
+                        "id": "1",
+                        "text": "Valid tweet",
+                        "created_at": "2023-01-01T00:00:00.000Z",
+                        "author_id": "user1",
+                    },
+                    {
+                        # Missing required fields - should be skipped
+                        "id": "2",
+                        "text": "Invalid tweet",
+                    }
+                ],
+                "includes": {
+                    "users": [
+                        {
+                            "id": "user1",
+                            "username": "testuser",
+                        }
+                    ]
+                },
+            }
+        )
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.twitter_source.search_posts(query)
+
+        # Should only get the valid tweet
+        assert len(posts) == 1
+        assert posts[0].id == "1"
+
 
 class TestRedditDataSource:
     """Test Reddit data source"""
@@ -324,6 +535,7 @@ class TestRedditDataSource:
         assert self.reddit_source.is_available()
 
     @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
     async def test_search_posts_success(self, mock_get):
         """Test successful post search"""
         mock_response = Mock()
@@ -357,6 +569,240 @@ class TestRedditDataSource:
         assert "Test Post" in posts[0].text
         assert posts[0].author == "testuser"
         assert posts[0].source == "reddit"
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_disabled_source(self, mock_get):
+        """Test search when source is disabled"""
+        config = DataSourceConfig(name="reddit", enabled=False, rate_limit=100)
+        reddit_source = RedditDataSource(config)
+        
+        query = SearchQuery(query="test", limit=10)
+        posts = await reddit_source.search_posts(query)
+        
+        assert posts == []
+        mock_get.assert_not_called()
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_api_error(self, mock_get):
+        """Test search with API error"""
+        mock_response = Mock()
+        mock_response.status = 429  # Rate limit error
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.reddit_source.search_posts(query)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_search_posts_exception(self, mock_get):
+        """Test search with exception"""
+        mock_get.side_effect = Exception("Network error")
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.reddit_source.search_posts(query)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_success(self, mock_get):
+        """Test successful user posts retrieval"""
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(
+            return_value={
+                "data": {
+                    "children": [
+                        {
+                            "data": {
+                                "id": "2",
+                                "title": "User Post",
+                                "selftext": "",
+                                "created_utc": 1672531200,
+                                "author": "testuser",
+                                "ups": 50,
+                                "num_comments": 5,
+                            }
+                        }
+                    ]
+                }
+            }
+        )
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        posts = await self.reddit_source.get_user_posts("testuser", limit=10)
+
+        assert len(posts) == 1
+        assert posts[0].id == "2"
+        assert posts[0].text == "User Post"
+        assert posts[0].author == "testuser"
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_disabled_source(self, mock_get):
+        """Test user posts when source is disabled"""
+        config = DataSourceConfig(name="reddit", enabled=False, rate_limit=100)
+        reddit_source = RedditDataSource(config)
+        
+        posts = await reddit_source.get_user_posts("testuser", limit=10)
+        
+        assert posts == []
+        mock_get.assert_not_called()
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_api_error(self, mock_get):
+        """Test user posts with API error"""
+        mock_response = Mock()
+        mock_response.status = 404
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        posts = await self.reddit_source.get_user_posts("testuser", limit=10)
+
+        assert posts == []
+
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_get_user_posts_exception(self, mock_get):
+        """Test user posts with exception"""
+        mock_get.side_effect = Exception("Network error")
+
+        posts = await self.reddit_source.get_user_posts("testuser", limit=10)
+
+        assert posts == []
+
+    def test_get_rate_limit_info(self):
+        """Test rate limit info"""
+        info = self.reddit_source.get_rate_limit_info()
+        assert info["requests_per_hour"] == 100
+        assert "remaining" in info
+        assert "reset_time" in info
+
+    @pytest.mark.asyncio
+    async def test_close_session(self):
+        """Test closing session"""
+        # Create a session first
+        await self.reddit_source._get_session()
+        assert self.reddit_source.session is not None
+        
+        # Close it
+        await self.reddit_source.close()
+        assert self.reddit_source.session is None
+
+    @pytest.mark.asyncio
+    async def test_close_no_session(self):
+        """Test closing when no session exists"""
+        assert self.reddit_source.session is None
+        await self.reddit_source.close()  # Should not raise error
+        assert self.reddit_source.session is None
+
+    @pytest.mark.asyncio
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_parse_reddit_response_deleted_post(self, mock_get):
+        """Test parsing with deleted/removed posts"""
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(
+            return_value={
+                "data": {
+                    "children": [
+                        {
+                            "data": {
+                                "id": "1",
+                                "title": "Valid Post",
+                                "selftext": "Content",
+                                "created_utc": 1672531200,
+                                "author": "testuser",
+                                "ups": 100,
+                                "num_comments": 10,
+                            }
+                        },
+                        {
+                            "data": {
+                                "id": "2",
+                                "title": "Deleted Post",
+                                "author": "[deleted]",  # Should be skipped
+                                "created_utc": 1672531200,
+                            }
+                        },
+                        {
+                            "data": {
+                                "id": "3",
+                                "title": "Removed Post",
+                                "removed_by_category": "moderator",  # Should be skipped
+                                "created_utc": 1672531200,
+                                "author": "user",
+                            }
+                        },
+                        {
+                            "data": {
+                                "id": "4",
+                                "title": "",  # Empty title should be skipped
+                                "selftext": "",
+                                "created_utc": 1672531200,
+                                "author": "user",
+                            }
+                        },
+                    ]
+                }
+            }
+        )
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.reddit_source.search_posts(query)
+
+        # Should only get the valid post
+        assert len(posts) == 1
+        assert posts[0].id == "1"
+
+    @pytest.mark.asyncio
+    @patch("aiohttp.ClientSession.get")
+    @pytest.mark.asyncio
+    async def test_parse_reddit_malformed_post(self, mock_get):
+        """Test parsing malformed post data"""
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(
+            return_value={
+                "data": {
+                    "children": [
+                        {
+                            "data": {
+                                "id": "1",
+                                "title": "Valid Post",
+                                "selftext": "Content",
+                                "created_utc": 1672531200,
+                                "author": "testuser",
+                                "ups": 100,
+                                "num_comments": 10,
+                            }
+                        },
+                        {
+                            "data": {
+                                # Missing required 'id' field - should be skipped
+                                "title": "Malformed Post",
+                                "created_utc": 1672531200,
+                                "author": "user",
+                            }
+                        },
+                    ]
+                }
+            }
+        )
+        mock_get.return_value.__aenter__.return_value = mock_response
+
+        query = SearchQuery(query="test", limit=10)
+        posts = await self.reddit_source.search_posts(query)
+
+        # Should only get the valid post
+        assert len(posts) == 1
+        assert posts[0].id == "1"
 
 
 if __name__ == "__main__":

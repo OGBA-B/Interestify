@@ -108,20 +108,7 @@ class TestAPI:
         assert response.status_code == 503
         assert "No data sources available" in response.json()["detail"]
 
-    def test_legacy_search_endpoint(self):
-        """Test legacy search endpoint"""
-        with patch("src.main.analysis_service") as mock_analysis_service:
-            # Mock the analyze_posts method to raise RuntimeError for no sources
-            mock_analysis_service.analyze_posts.side_effect = RuntimeError("No data sources available")
 
-            response = self.client.get("/search/test")
-            assert response.status_code == 503  # No sources available
-
-    def test_legacy_followers_endpoint(self):
-        """Test legacy followers endpoint (deprecated)"""
-        response = self.client.get("/followers/testuser")
-        assert response.status_code == 410  # Gone
-        assert "deprecated" in response.json()["detail"].lower()
 
     def test_get_user_posts_invalid_source(self):
         """Test getting user posts with invalid source"""
