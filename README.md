@@ -55,13 +55,51 @@ client/                    # React frontend (existing)
 - **Cost Optimization**: Reduces API calls and costs
 - **Statistics Tracking**: Monitor cache performance
 
-## 🛠️ Installation
+## 🛠️ Installation & Build
 
-### Backend Setup
+### Quick Start (Recommended)
+
+The easiest way to get Interestify running is using the provided build and run scripts:
+
+1. **Build the Application**
+```bash
+./build.sh
+```
+This script will:
+- Set up Python virtual environment
+- Install all backend dependencies
+- Install frontend dependencies
+- Create environment configuration
+- Download required NLTK data
+- Build the production frontend
+- Test the backend startup
+
+2. **Run the Application**
+```bash
+./run.sh
+```
+This script will:
+- Start the FastAPI backend server on http://localhost:8000
+- Start the React frontend server on http://localhost:3000
+- Display access URLs and log locations
+- Handle graceful shutdown with Ctrl+C
+
+3. **Access the Application**
+- Frontend: http://localhost:3000
+- API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+
+### Manual Installation
+
+If you prefer to set up manually:
+
+#### Backend Setup
 
 1. **Install Dependencies**
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install fastapi uvicorn sqlalchemy aiosqlite python-dotenv textblob vaderSentiment aiohttp greenlet
 ```
 
 2. **Set Environment Variables**
@@ -85,13 +123,14 @@ REDDIT_CLIENT_SECRET=your_reddit_client_secret
 4. **Run the Application**
 ```bash
 # Development server
+source .venv/bin/activate
 python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # Production server
 python -m uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Frontend Setup
+#### Frontend Setup
 ```bash
 cd client/
 npm install
@@ -107,12 +146,161 @@ npm start
 npm run build
 ```
 
-## 📝 How to Use Interestify
+### Build Scripts
 
+#### build.sh
+Comprehensive build script that:
+- Sets up Python virtual environment
+- Installs all dependencies
+- Creates environment configuration
+- Downloads NLTK data for sentiment analysis
+- Builds production frontend
+- Creates necessary directories
+- Tests backend functionality
+
+#### run.sh
+Production-ready run script that:
+- Starts both backend and frontend servers
+- Provides colored output and status updates
+- Logs output to files in `logs/` directory
+- Handles graceful shutdown
+- Monitors server health
+- Displays access URLs and helpful information
+
+## � Build
+
+### Automated Build Process
+
+Interestify includes automated build scripts for easy setup and deployment:
+
+#### Build Script (`build.sh`)
+```bash
+./build.sh
+```
+
+**What it does:**
+- ✅ Creates Python virtual environment
+- ✅ Installs all backend dependencies (FastAPI, SQLAlchemy, sentiment analysis libraries)
+- ✅ Installs frontend dependencies (React, Material-UI)
+- ✅ Sets up environment configuration (.env file)
+- ✅ Downloads NLTK data for TextBlob sentiment analysis
+- ✅ Builds production-optimized React frontend
+- ✅ Creates necessary directories (logs/, data/)
+- ✅ Tests backend startup functionality
+- ✅ Provides helpful next steps
+
+#### Run Script (`run.sh`)
+```bash
+./run.sh
+```
+
+**What it does:**
+- 🚀 Starts FastAPI backend server (http://localhost:8000)
+- 🌐 Starts React frontend server (http://localhost:3000)
+- 📊 Provides real-time status updates with colored output
+- 📝 Logs all output to `logs/backend.log` and `logs/frontend.log`
+- 🔄 Monitors server health and auto-restarts if needed
+- 🛑 Handles graceful shutdown on Ctrl+C
+- 📱 Displays access URLs and helpful information
+
+### Build Requirements
+
+**System Requirements:**
+- Python 3.8+ (Python 3.11+ recommended)
+- Node.js 14+ and npm
+- Git
+- 4GB+ RAM (for sentiment analysis models)
+- 2GB+ disk space
+
+**Dependencies Installed:**
+- **Backend:** FastAPI, Uvicorn, SQLAlchemy, Pydantic, TextBlob, VADER Sentiment, aiohttp
+- **Frontend:** React, TypeScript, Material-UI, Chart.js, Axios
+
+### Development Build
+
+For development with hot reload:
+```bash
+# Backend (Terminal 1)
+source .venv/bin/activate
+python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (Terminal 2)
+cd client
+npm start
+```
+
+### Production Build
+
+For production deployment:
+```bash
+# Build frontend for production
+cd client
+npm run build
+
+# Start backend in production mode
+source .venv/bin/activate
+python -m uvicorn src.main:app --host 0.0.0.0 --port 8000
+```
+
+### Build Troubleshooting
+
+**Common Issues:**
+
+1. **Python version incompatibility**
+   ```bash
+   # Use specific Python version
+   python3.11 -m venv .venv
+   ```
+
+2. **Node.js dependency conflicts**
+   ```bash
+   cd client
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+
+3. **Virtual environment issues**
+   ```bash
+   rm -rf .venv
+   ./build.sh  # Rebuild from scratch
+   ```
+
+4. **Port conflicts**
+   ```bash
+   # Kill processes on ports 3000 and 8000
+   lsof -ti:3000 | xargs kill -9
+   lsof -ti:8000 | xargs kill -9
+   ```
+
+### Docker Build (Alternative)
+
+```bash
+# Build Docker image
+docker build -t interestify .
+
+# Run container
+docker run -p 8000:8000 -p 3000:3000 interestify
+```
+
+## �📝 How to Use Interestify
+
+### Quick Start
+1. **Build and start the application:**
+   ```bash
+   ./build.sh  # First time setup
+   ./run.sh    # Start the application
+   ```
+
+2. **Access the application:**
+   - Frontend: http://localhost:3000
+   - API: http://localhost:8000/docs
+
+### Manual Startup
 After installing dependencies and configuring your `.env` file:
 
 1. **Start the Backend**
    ```bash
+   source .venv/bin/activate
    python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
    ```
    The API will be available at `http://localhost:8000`.
@@ -123,6 +311,8 @@ After installing dependencies and configuring your `.env` file:
    npm start
    ```
    Visit `http://localhost:3000` in your browser.
+
+### Using the Application
 
 3. **Search for Topics**
    - Enter keywords in the search bar.
